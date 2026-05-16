@@ -1,0 +1,49 @@
+
+> tailadmin-react@2.3.0 build
+> tsc -b && vite build
+
+src/components/auth/SignInForm.tsx(3,10): error TS6133: 'ChevronLeftIcon' is declared but its value is never read.
+src/components/auth/SignInForm.tsx(122,46): error TS2322: Type '{ children: string; to: string; name: string; className: string; }' is not assignable to type 'IntrinsicAttributes & LinkProps & RefAttributes<HTMLAnchorElement>'.
+  Property 'name' does not exist on type 'IntrinsicAttributes & LinkProps & RefAttributes<HTMLAnchorElement>'.
+src/components/auth/SignUpForm.tsx(3,10): error TS6133: 'ChevronLeftIcon' is declared but its value is never read.
+src/layout/AppSidebar.tsx(11,3): error TS6133: 'ListIcon' is declared but its value is never read.
+src/layout/AppSidebar.tsx(12,3): error TS6133: 'PageIcon' is declared but its value is never read.
+src/layout/AppSidebar.tsx(13,3): error TS6133: 'PieChartIcon' is declared but its value is never read.
+src/layout/AppSidebar.tsx(14,3): error TS6133: 'PlugInIcon' is declared but its value is never read.
+src/layout/AppSidebar.tsx(15,3): error TS6133: 'TableIcon' is declared but its value is never read.
+src/layout/AppSidebar.tsx(19,1): error TS6133: 'SidebarWidget' is declared but its value is never read.
+src/pages/AdminCategories.tsx(8,1): error TS6133: 'Badge' is declared but its value is never read.
+src/pages/AdminCategories.tsx(10,1): error TS6192: All imports in import declaration are unused.
+src/pages/AdminCategories.tsx(13,10): error TS6133: 'GridIcon' is declared but its value is never read.
+src/pages/AdminCourses.tsx(13,20): error TS6133: 'BoxIconLine' is declared but its value is never read.
+src/pages/AdminKyc.tsx(17,16): error TS6133: 'setPage' is declared but its value is never read.
+src/pages/AdminKyc.tsx(18,18): error TS6133: 'setStatus' is declared but its value is never read.
+src/pages/AdminKyc.tsx(31,20): error TS2339: Property 'items' does not exist on type '{ data: any[]; total: number; }'.
+src/pages/AdminKyc.tsx(142,76): error TS2322: Type '{ variant: "error"; title: string; message: string; className: string; }' is not assignable to type 'IntrinsicAttributes & AlertProps'.
+  Property 'className' does not exist on type 'IntrinsicAttributes & AlertProps'.
+src/pages/AdminKyc.tsx(250,29): error TS2322: Type '{ children: string; disabled: boolean; color: string; className: string; onClick: () => undefined; }' is not assignable to type 'IntrinsicAttributes & ButtonProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & ButtonProps'.
+src/pages/AdminKyc.tsx(259,29): error TS2322: Type '{ children: string; disabled: boolean; variant: "outline"; color: string; className: string; onClick: () => undefined; }' is not assignable to type 'IntrinsicAttributes & ButtonProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & ButtonProps'.
+src/pages/AdminPlans.tsx(279,17): error TS2322: Type '({ header: string; accessor: (t: PublicPricingTier) => Element; align?: undefined; } | { header: string; align: "right"; accessor: (_: any, i: number) => Element; })[]' is not assignable to type 'Column<PublicPricingTier>[]'.
+  Type '{ header: string; accessor: (t: PublicPricingTier) => Element; align?: undefined; } | { header: string; align: "right"; accessor: (_: any, i: number) => Element; }' is not assignable to type 'Column<PublicPricingTier>'.
+    Type '{ header: string; align: "right"; accessor: (_: any, i: number) => JSX.Element; }' is not assignable to type 'Column<PublicPricingTier>'.
+      Types of property 'accessor' are incompatible.
+        Type '(_: any, i: number) => JSX.Element' is not assignable to type 'keyof PublicPricingTier | ((item: PublicPricingTier) => ReactNode) | undefined'.
+          Type '(_: any, i: number) => JSX.Element' is not assignable to type '(item: PublicPricingTier) => ReactNode'.
+            Target signature provides too few arguments. Expected 2 or more, but got 1.
+src/pages/AdminUsers.tsx(16,16): error TS6133: 'setPage' is declared but its value is never read.
+src/pages/AdminUsers.tsx(28,20): error TS2339: Property 'items' does not exist on type '{ data: any[]; total: number; page: number; limit: number; }'.
+src/pages/AdminUsers.tsx(144,76): error TS2322: Type '{ variant: "error"; title: string; message: string; className: string; }' is not assignable to type 'IntrinsicAttributes & AlertProps'.
+  Property 'className' does not exist on type 'IntrinsicAttributes & AlertProps'.
+src/pages/AdminUsers.tsx(263,23): error TS2322: Type '{ children: string; variant: "outline"; color: string; onClick: () => Promise<void>; }' is not assignable to type 'IntrinsicAttributes & ButtonProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & ButtonProps'.
+src/pages/AdminWithdrawals.tsx(17,16): error TS6133: 'setPage' is declared but its value is never read.
+src/pages/AdminWithdrawals.tsx(18,18): error TS6133: 'setStatus' is declared but its value is never read.
+src/pages/AdminWithdrawals.tsx(31,20): error TS2339: Property 'items' does not exist on type '{ data: any[]; total: number; }'.
+src/pages/AdminWithdrawals.tsx(128,76): error TS2322: Type '{ variant: "error"; title: string; message: string; className: string; }' is not assignable to type 'IntrinsicAttributes & AlertProps'.
+  Property 'className' does not exist on type 'IntrinsicAttributes & AlertProps'.
+src/pages/AdminWithdrawals.tsx(221,29): error TS2322: Type '{ children: string; disabled: boolean; color: string; className: string; onClick: () => undefined; }' is not assignable to type 'IntrinsicAttributes & ButtonProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & ButtonProps'.
+src/pages/AdminWithdrawals.tsx(230,29): error TS2322: Type '{ children: string; disabled: boolean; variant: "outline"; color: string; className: string; onClick: () => undefined; }' is not assignable to type 'IntrinsicAttributes & ButtonProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & ButtonProps'.
