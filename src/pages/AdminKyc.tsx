@@ -8,7 +8,7 @@ import Button from "../components/ui/button/Button";
 import Alert from "../components/ui/alert/Alert";
 import Label from "../components/form/Label";
 import TextArea from "../components/form/input/TextArea";
-import { api } from "../lib/api";
+import { api, mediaUrl } from "../lib/api";
 
 export default function AdminKyc() {
   const [items, setItems] = useState<any[]>([]);
@@ -28,7 +28,7 @@ export default function AdminKyc() {
     setError(null);
     try {
       const res = await api.admin.kycList({ page, status, limit: 10 });
-      setItems(res.data || []);
+      setItems(res.items || res.data || []);
       setTotal(res.total || 0);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load KYC requests");
@@ -168,10 +168,10 @@ export default function AdminKyc() {
                   <div className="space-y-6">
                     <div>
                       <Label className="mb-2">Aadhar Card ({selectedKyc.aadharNumber})</Label>
-                      {selectedKyc.aadharImage ? (
+                      {mediaUrl(selectedKyc.aadharImage) ? (
                         <div className="aspect-[4/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                           <img
-                            src={selectedKyc.aadharImage}
+                            src={mediaUrl(selectedKyc.aadharImage)!}
                             alt="Aadhar"
                             className="size-full object-contain"
                           />
@@ -184,10 +184,10 @@ export default function AdminKyc() {
                     </div>
                     <div>
                       <Label className="mb-2">PAN Card ({selectedKyc.panNumber})</Label>
-                      {selectedKyc.panImage ? (
+                      {mediaUrl(selectedKyc.panImage) ? (
                         <div className="aspect-[4/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                           <img
-                            src={selectedKyc.panImage}
+                            src={mediaUrl(selectedKyc.panImage)!}
                             alt="PAN"
                             className="size-full object-contain"
                           />

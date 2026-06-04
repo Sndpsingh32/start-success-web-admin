@@ -28,6 +28,8 @@ import AdminBroadcast from "./pages/AdminBroadcast";
 import AdminReferralTree from "./pages/AdminReferralTree";
 import AdminLandingHero from "./pages/AdminLandingHero";
 import AdminReviews from "./pages/AdminReviews";
+import AdminPlanSales from "./pages/AdminPlanSales";
+import AdminIncome from "./pages/AdminIncome";
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
@@ -56,6 +58,8 @@ export default function App() {
               <Route path="/admin/users" element={<AdminUsers />} />
               <Route path="/admin/kyc" element={<AdminKyc />} />
               <Route path="/admin/withdrawals" element={<AdminWithdrawals />} />
+              <Route path="/admin/plan-sales" element={<AdminPlanSales />} />
+              <Route path="/admin/income" element={<AdminIncome />} />
               <Route path="/admin/banners" element={<AdminBanners />} />
               <Route path="/admin/coupons" element={<AdminCoupons />} />
               <Route path="/admin/settings" element={<AdminSettings />} />

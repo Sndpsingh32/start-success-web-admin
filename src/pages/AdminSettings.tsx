@@ -10,9 +10,10 @@ import { api } from "../lib/api";
 
 export default function AdminSettings() {
   const [settings, setSettings] = useState<any>({
-    couponOwnerPercent: 0,
-    platformPercent: 0,
-    directParentPercent: 0,
+    couponOwnerPercent: 70,
+    platformPercent: 20,
+    directParentPercent: 10,
+    memberPromoBuyerDiscountPercent: 40,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -98,6 +99,34 @@ export default function AdminSettings() {
                 placeholder="e.g. 10"
               />
               <p className="mt-1 text-xs text-gray-400">Passive income for the immediate upline.</p>
+            </div>
+          </div>
+
+          <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800">
+            <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-1">Member promo discount</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Jab koi member apna promo code lagata hai (Sell Plan / checkout), buyer ko plan price par itna %
+              off milega. Example: 40% → ₹2,000 plan par buyer ₹1,200 pay karega; commission is discounted amount par
+              split hoti hai (70 / 10 / 20).
+            </p>
+            <div className="max-w-xs">
+              <Label>Buyer discount with member promo (%)</Label>
+              <Input
+                type="number"
+                min="0"
+                max="100"
+                value={String(settings.memberPromoBuyerDiscountPercent ?? 40)}
+                onChange={(e) =>
+                  setSettings({
+                    ...settings,
+                    memberPromoBuyerDiscountPercent: Math.min(
+                      100,
+                      Math.max(0, Number(e.target.value) || 0),
+                    ),
+                  })
+                }
+                placeholder="e.g. 40"
+              />
             </div>
           </div>
 

@@ -2,6 +2,13 @@ import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:3000";
 
+/** Turn `/uploads/...` paths from API into full URLs (admin runs on a different port). */
+export function mediaUrl(path: string | null | undefined): string | null {
+  if (!path) return null;
+  if (path.startsWith("http")) return path;
+  return `${API_BASE.replace(/\/$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
 /**
  * Custom Axios instance type that reflects our interceptor's behavior
  * (returning response.data directly instead of the full AxiosResponse).
@@ -26,6 +33,11 @@ instance.interceptors.request.use(
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    // FormData must use multipart boundary — default application/json breaks file uploads
+    if (config.data instanceof FormData && config.headers) {
+      delete config.headers["Content-Type"];
+      delete config.headers["content-type"];
     }
     return config;
   },
@@ -107,6 +119,15 @@ export const api = {
       instance.get<any>("/withdrawals/admin", { params }),
     withdrawalDecide: (id: string, approve: boolean, adminNote?: string) =>
       instance.patch(`/withdrawals/admin/${encodeURIComponent(id)}`, { approve, adminNote }),
+    withdrawalSyncPayout: (id: string) =>
+      instance.post(`/withdrawals/admin/${encodeURIComponent(id)}/sync-payout`),
+    planSalesList: (params: { status?: string; page?: number; limit?: number } = {}) =>
+      instance.get<any>("/plan-sales/admin", { params }),
+    planSaleMarkPaid: (id: string, adminNote?: string) =>
+      instance.patch(`/plan-sales/admin/${encodeURIComponent(id)}/paid`, { adminNote }),
+    incomeUsers: (params: { page?: number; limit?: number; search?: string } = {}) =>
+      instance.get<any>("/analytics/income/users", { params }),
+    leaderboard: (period: string) => instance.get<any>(`/analytics/leaderboard?period=${period}`),
     /** Admin uploads a video file; returns absolute `url` for the lesson field. */
     uploadCourseVideo: (file: File) => {
       const fd = new FormData();

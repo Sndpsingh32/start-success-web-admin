@@ -11,6 +11,8 @@ export type PublicPricingTier = {
   savings: string;
   description: string;
   accent: string;
+  /** MongoDB course ids included with this plan */
+  courseIds?: string[];
 };
 
 export type PublicPricingCompareRow = {

@@ -26,7 +26,7 @@ export default function AdminUsers() {
     setError(null);
     try {
       const res = await api.admin.usersList({ page, search, limit: 10 });
-      setUsers(res.data || []);
+      setUsers(res.items || res.data || []);
       setTotal(res.total || 0);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load users");

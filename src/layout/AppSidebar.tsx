@@ -45,6 +45,8 @@ const navItems: NavItem[] = [
       { name: "Users List", path: "/admin/users", pro: false },
       { name: "KYC Requests", path: "/admin/kyc", pro: false },
       { name: "Withdrawals", path: "/admin/withdrawals", pro: false },
+      { name: "Plan sales", path: "/admin/plan-sales", pro: false },
+      { name: "Income dashboard", path: "/admin/income", pro: false },
       { name: "Reviews", path: "/admin/reviews", pro: false },
     ],
   },

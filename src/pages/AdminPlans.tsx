@@ -28,6 +28,7 @@ function emptyTier(): PublicPricingTier {
     savings: "Savings vs retail",
     description: "Long description for the plan.",
     accent: "from-primary/70 via-primary/40 to-transparent",
+    courseIds: [],
   };
 }
 
@@ -70,6 +71,9 @@ export default function AdminPlans() {
   const [featureLines, setFeatureLines] = useState("");
 
   const [deleteTierIdx, setDeleteTierIdx] = useState<number | null>(null);
+  const [allCourses, setAllCourses] = useState<
+    { _id: string; title: string; slug?: string; isPublished?: boolean }[]
+  >([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -82,6 +86,13 @@ export default function AdminPlans() {
       setCompareRows(
         syncCompareToTiers(t, cr.length ? cr : [{ label: "Feature", cells: t.map(() => "—") }])
       );
+      const courses = (await api.admin.coursesList()) as {
+        _id: string;
+        title: string;
+        slug?: string;
+        isPublished?: boolean;
+      }[];
+      setAllCourses(Array.isArray(courses) ? courses : []);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load pricing");
     } finally {
@@ -112,6 +123,7 @@ export default function AdminPlans() {
         accent: (t.accent || "").trim(),
         badge: t.badge?.trim() || undefined,
         highlight: !!t.highlight,
+        courseIds: (t.courseIds ?? []).map((id) => String(id).trim()).filter(Boolean),
       }));
       await api.admin.landingPricingPatch({ tiers: cleanTiers, compareRows: rows });
       setSuccess("Changes saved successfully.");
@@ -126,7 +138,7 @@ export default function AdminPlans() {
 
   const openTier = (idx: number) => {
     setTierIndex(idx);
-    setDraft({ ...tiers[idx] });
+    setDraft({ ...tiers[idx], courseIds: tiers[idx].courseIds ?? [] });
     setFeatureLines(tiers[idx].features.join("\n"));
     setView("form");
     setSuccess(null);
@@ -215,6 +227,14 @@ export default function AdminPlans() {
         accessor: (t: PublicPricingTier) => (
           <span className="text-sm text-gray-600 dark:text-gray-400">
             {t.features?.length ?? 0} features
+          </span>
+        ),
+      },
+      {
+        header: "Courses",
+        accessor: (t: PublicPricingTier) => (
+          <span className="text-sm font-medium text-gray-900 dark:text-white">
+            {t.courseIds?.length ?? 0} attached
           </span>
         ),
       },
@@ -492,6 +512,52 @@ export default function AdminPlans() {
                   <ComponentCard title="Benefits & Features">
                     <Label>Plan benefits (one per line)</Label>
                     <TextArea rows={8} value={featureLines} onChange={setFeatureLines} />
+                  </ComponentCard>
+
+                  <ComponentCard title="Included courses (playlist)">
+                    <p className="mb-3 text-sm text-gray-500 dark:text-gray-400">
+                      Members with this plan can watch all lessons in selected courses (full curriculum unlock).
+                    </p>
+                    {allCourses.length === 0 ? (
+                      <p className="text-sm text-gray-500">No courses in catalog. Create courses first.</p>
+                    ) : (
+                      <div className="max-h-64 space-y-2 overflow-y-auto rounded-lg border border-gray-200 p-3 dark:border-gray-700">
+                        {allCourses.map((c) => {
+                          const selected = (draft.courseIds ?? []).includes(c._id);
+                          return (
+                            <label
+                              key={c._id}
+                              className="flex cursor-pointer items-start gap-2 rounded-md px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-white/5"
+                            >
+                              <input
+                                type="checkbox"
+                                className="mt-1 h-4 w-4 rounded border-gray-300"
+                                checked={selected}
+                                onChange={() => {
+                                  const prev = draft.courseIds ?? [];
+                                  const next = selected
+                                    ? prev.filter((id) => id !== c._id)
+                                    : [...prev, c._id];
+                                  setDraft({ ...draft, courseIds: next });
+                                }}
+                              />
+                              <span className="text-sm text-gray-800 dark:text-gray-200">
+                                {c.title}
+                                {!c.isPublished ? (
+                                  <span className="ml-2 text-xs text-amber-600">(draft)</span>
+                                ) : null}
+                                {c.slug ? (
+                                  <span className="ml-1 block text-xs text-gray-500 font-mono">{c.slug}</span>
+                                ) : null}
+                              </span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
+                    <p className="mt-2 text-xs text-gray-500">
+                      {(draft.courseIds ?? []).length} course(s) selected
+                    </p>
                   </ComponentCard>
 
                   <ComponentCard title="Visuals & Badges">

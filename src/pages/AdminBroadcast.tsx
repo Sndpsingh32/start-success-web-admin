@@ -14,7 +14,7 @@ export default function AdminBroadcast() {
   const [draft, setDraft] = useState({
     title: "",
     body: "",
-    type: "SYSTEM", // 'SYSTEM', 'PROMO', 'ALERT'
+    type: "system",
   });
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +36,7 @@ export default function AdminBroadcast() {
     try {
       await api.admin.broadcastSend(draft);
       setSuccess("Broadcast message sent successfully to all users.");
-      setDraft({ title: "", body: "", type: "SYSTEM" });
+      setDraft({ title: "", body: "", type: "system" });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Broadcast failed");
     } finally {
@@ -74,9 +74,10 @@ export default function AdminBroadcast() {
                   value={draft.type}
                   onChange={(e) => setDraft({ ...draft, type: e.target.value })}
                 >
-                  <option value="SYSTEM">System Alert</option>
-                  <option value="PROMO">Promotion / Offer</option>
-                  <option value="INFO">General Info</option>
+                  <option value="system">System Alert</option>
+                  <option value="coupon_used">Promotion / Offer</option>
+                  <option value="new_sale">New Sale</option>
+                  <option value="new_referral">New Referral</option>
                 </select>
               </div>
             </div>

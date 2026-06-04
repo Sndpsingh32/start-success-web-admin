@@ -47,7 +47,15 @@ export default function SignInForm() {
         from && from !== "/signin" && from.startsWith("/") && !from.startsWith("//") ? from : "/admin/courses";
       navigate(target, { replace: true });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Sign in failed");
+      const msg = e instanceof Error ? e.message : "Sign in failed";
+      if (msg === "Unauthorized" || msg.includes("401")) {
+        setError(
+          "Invalid email or password, or the API/database is unavailable. " +
+            "Admin login: admin@edupath.local / Admin123! — Demo users (alex@demo.local) use the Explorer app, not this portal.",
+        );
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -75,6 +83,16 @@ export default function SignInForm() {
               </div>
             ) : null}
             
+            <div className="mb-4 rounded-lg border border-brand-500/20 bg-brand-500/5 px-3 py-2 text-xs text-gray-600 dark:text-gray-300">
+              <p className="font-semibold text-brand-600 dark:text-brand-400">Admin only</p>
+              <p className="mt-1">
+                <span className="font-medium">admin@edupath.local</span> / <span className="font-medium">Admin123!</span>
+              </p>
+              <p className="mt-1 text-gray-500 dark:text-gray-400">
+                Demo users (e.g. alex@demo.local) sign in on the Explorer app at{" "}
+                <span className="font-mono">localhost:5173</span>, not here.
+              </p>
+            </div>
             <div className="relative py-2 sm:py-3">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-200 dark:border-gray-800"></div>
