@@ -21,9 +21,10 @@ function emptyTier(): PublicPricingTier {
     name: "New plan",
     tagline: "Short pitch for cards",
     price: 499,
-    period: "month",
+    period: "one-time",
     features: ["First plan benefit"],
     highlight: false,
+    showOnLanding: false,
     chip: "Chip label",
     savings: "Savings vs retail",
     description: "Long description for the plan.",
@@ -123,6 +124,7 @@ export default function AdminPlans() {
         accent: (t.accent || "").trim(),
         badge: t.badge?.trim() || undefined,
         highlight: !!t.highlight,
+        showOnLanding: !!t.showOnLanding,
         courseIds: (t.courseIds ?? []).map((id) => String(id).trim()).filter(Boolean),
       }));
       await api.admin.landingPricingPatch({ tiers: cleanTiers, compareRows: rows });
@@ -250,6 +252,11 @@ export default function AdminPlans() {
             {t.badge ? (
               <Badge size="sm" color="primary">
                 {t.badge}
+              </Badge>
+            ) : null}
+            {t.showOnLanding ? (
+              <Badge size="sm" color="success">
+                Landing
               </Badge>
             ) : null}
           </div>
@@ -561,17 +568,31 @@ export default function AdminPlans() {
                   </ComponentCard>
 
                   <ComponentCard title="Visuals & Badges">
-                    <div className="flex items-center gap-3 mb-4">
-                      <input
-                        type="checkbox"
-                        id="highlight"
-                        checked={!!draft.highlight}
-                        onChange={(e) => setDraft({ ...draft, highlight: e.target.checked })}
-                        className="h-4 w-4 rounded border-gray-300 text-brand-500"
-                      />
-                      <Label htmlFor="highlight" className="cursor-pointer">
-                        Highlight column (Premium Look)
-                      </Label>
+                    <div className="space-y-3 mb-4">
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          id="showOnLanding"
+                          checked={!!draft.showOnLanding}
+                          onChange={(e) => setDraft({ ...draft, showOnLanding: e.target.checked })}
+                          className="h-4 w-4 rounded border-gray-300 text-brand-500"
+                        />
+                        <Label htmlFor="showOnLanding" className="cursor-pointer">
+                          Show on landing page (homepage pricing cards)
+                        </Label>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          id="highlight"
+                          checked={!!draft.highlight}
+                          onChange={(e) => setDraft({ ...draft, highlight: e.target.checked })}
+                          className="h-4 w-4 rounded border-gray-300 text-brand-500"
+                        />
+                        <Label htmlFor="highlight" className="cursor-pointer">
+                          Highlight column (Premium Look)
+                        </Label>
+                      </div>
                     </div>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div>

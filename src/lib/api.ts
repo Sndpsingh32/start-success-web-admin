@@ -5,8 +5,14 @@ const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:3000";
 /** Turn `/uploads/...` paths from API into full URLs (admin runs on a different port). */
 export function mediaUrl(path: string | null | undefined): string | null {
   if (!path) return null;
-  if (path.startsWith("http")) return path;
-  return `${API_BASE.replace(/\/$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
+  const base = API_BASE.replace(/\/$/, "");
+  if (path.startsWith("http")) {
+    if (base.includes("localhost") && path.includes("/uploads/")) {
+      return `${base}${path.slice(path.indexOf("/uploads/"))}`;
+    }
+    return path;
+  }
+  return `${base}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
 /**
@@ -149,6 +155,12 @@ export const api = {
     bannerCreate: (body: any) => instance.post("/banners/admin", body),
     bannerUpdate: (id: string, body: any) => instance.patch(`/banners/admin/${encodeURIComponent(id)}`, body),
     bannerDelete: (id: string) => instance.delete(`/banners/admin/${encodeURIComponent(id)}`),
+    /** About Us team leaders */
+    teamMembersList: () => instance.get<any[]>("/team-members/admin/all"),
+    teamMemberCreate: (body: any) => instance.post("/team-members/admin", body),
+    teamMemberUpdate: (id: string, body: any) =>
+      instance.patch(`/team-members/admin/${encodeURIComponent(id)}`, body),
+    teamMemberDelete: (id: string) => instance.delete(`/team-members/admin/${encodeURIComponent(id)}`),
     /** Coupons */
     couponsList: () => instance.get<any[]>("/coupons"),
     couponCreate: (body: any) => instance.post("/coupons", body),

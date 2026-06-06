@@ -35,6 +35,7 @@ const navItems: NavItem[] = [
       { name: "Plans & pricing", path: "/admin/plans", pro: false },
       { name: "Landing Hero", path: "/admin/landing-hero", pro: false },
       { name: "Banners", path: "/admin/banners", pro: false },
+      { name: "Team leaders", path: "/admin/team-members", pro: false },
       { name: "Coupons", path: "/admin/coupons", pro: false },
     ],
   },

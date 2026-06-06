@@ -22,6 +22,7 @@ import AdminUsers from "./pages/AdminUsers";
 import AdminKyc from "./pages/AdminKyc";
 import AdminWithdrawals from "./pages/AdminWithdrawals";
 import AdminBanners from "./pages/AdminBanners";
+import AdminTeamMembers from "./pages/AdminTeamMembers";
 import AdminCoupons from "./pages/AdminCoupons";
 import AdminSettings from "./pages/AdminSettings";
 import AdminBroadcast from "./pages/AdminBroadcast";
@@ -61,6 +62,7 @@ export default function App() {
               <Route path="/admin/plan-sales" element={<AdminPlanSales />} />
               <Route path="/admin/income" element={<AdminIncome />} />
               <Route path="/admin/banners" element={<AdminBanners />} />
+              <Route path="/admin/team-members" element={<AdminTeamMembers />} />
               <Route path="/admin/coupons" element={<AdminCoupons />} />
               <Route path="/admin/settings" element={<AdminSettings />} />
               <Route path="/admin/broadcast" element={<AdminBroadcast />} />

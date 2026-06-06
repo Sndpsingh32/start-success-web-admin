@@ -13,6 +13,9 @@ export type PublicPricingTier = {
   accent: string;
   /** MongoDB course ids included with this plan */
   courseIds?: string[];
+  /** Show on homepage pricing section (sell flow still lists all plans). */
+  showOnLanding?: boolean;
+  promoPrice?: number;
 };
 
 export type PublicPricingCompareRow = {
