@@ -103,6 +103,8 @@ export const api = {
       }>("/admin/landing/pricing"),
     landingHeroGet: () => instance.get<any>("/public/hero"),
     landingHeroPatch: (body: unknown) => instance.patch("/admin/landing/hero", body),
+    contactPageGet: () => instance.get<any>("/admin/contact-page"),
+    contactPagePatch: (body: unknown) => instance.patch("/admin/contact-page", body),
     landingPricingPatch: (body: unknown) => {
       console.log("landingPricingPatch called with", body);
       return instance.patch("/admin/landing/pricing", body);
@@ -155,6 +157,20 @@ export const api = {
     bannerCreate: (body: any) => instance.post("/banners/admin", body),
     bannerUpdate: (id: string, body: any) => instance.patch(`/banners/admin/${encodeURIComponent(id)}`, body),
     bannerDelete: (id: string) => instance.delete(`/banners/admin/${encodeURIComponent(id)}`),
+    /** Marketing tools (M-Tools) */
+    marketingToolsList: () => instance.get<any[]>("/marketing-tools/admin/all"),
+    marketingToolCreate: (body: any) => instance.post("/marketing-tools/admin", body),
+    marketingToolUpdate: (id: string, body: any) =>
+      instance.patch(`/marketing-tools/admin/${encodeURIComponent(id)}`, body),
+    marketingToolDelete: (id: string) =>
+      instance.delete(`/marketing-tools/admin/${encodeURIComponent(id)}`),
+    /** Affiliate trainings */
+    trainingsList: () => instance.get<any[]>("/trainings/admin/all"),
+    trainingCreate: (body: any) => instance.post("/trainings/admin", body),
+    trainingUpdate: (id: string, body: any) =>
+      instance.patch(`/trainings/admin/${encodeURIComponent(id)}`, body),
+    trainingDelete: (id: string) =>
+      instance.delete(`/trainings/admin/${encodeURIComponent(id)}`),
     /** About Us team leaders */
     teamMembersList: () => instance.get<any[]>("/team-members/admin/all"),
     teamMemberCreate: (body: any) => instance.post("/team-members/admin", body),

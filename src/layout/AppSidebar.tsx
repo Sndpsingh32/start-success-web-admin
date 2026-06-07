@@ -34,9 +34,12 @@ const navItems: NavItem[] = [
       { name: "Categories", path: "/admin/categories", pro: false },
       { name: "Plans & pricing", path: "/admin/plans", pro: false },
       { name: "Landing Hero", path: "/admin/landing-hero", pro: false },
+      { name: "Contact page", path: "/admin/contact-page", pro: false },
       { name: "Banners", path: "/admin/banners", pro: false },
       { name: "Team leaders", path: "/admin/team-members", pro: false },
       { name: "Coupons", path: "/admin/coupons", pro: false },
+      { name: "Marketing tools", path: "/admin/marketing-tools", pro: false },
+      { name: "Affiliate trainings", path: "/admin/trainings", pro: false },
     ],
   },
   {
@@ -280,7 +283,7 @@ const AppSidebar: React.FC = () => {
       >
         <Link to="/">
           <img
-            src="/images/startsuccss.png"
+            src="/images/star-success.png"
             alt="StartSuccess Logo"
             width={isExpanded || isHovered || isMobileOpen ? 150 : 32}
             className="object-contain"

@@ -20,7 +20,7 @@ export default function AuthLayout({
               <Link to="/" className="block mb-4">
                 <img
                   width={180}
-                  src="/images/startsuccss.png"
+                  src="/images/star-success.png"
                   alt="StartSuccess Logo"
                 />
               </Link>

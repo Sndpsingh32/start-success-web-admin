@@ -85,7 +85,7 @@ const AppHeader: React.FC = () => {
 
           <Link to="/" className="lg:hidden">
             <img
-              src="/images/startsuccss.png"
+              src="/images/star-success.png"
               alt="StartSuccess Logo"
               className="h-8 w-auto"
             />

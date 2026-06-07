@@ -14,7 +14,7 @@ export default function SignUpForm() {
         <div>
           <div className="mb-4 text-center">
             <Link to="/" className="inline-block mb-4">
-              <img src="/images/startsuccss.png" alt="StartSuccess" className="h-12 w-auto mx-auto" />
+              <img src="/images/star-success.png" alt="StartSuccess" className="h-12 w-auto mx-auto" />
             </Link>
             <h1 className="mb-1 font-display font-bold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">
               Create Admin Account

@@ -29,6 +29,9 @@ import AdminBroadcast from "./pages/AdminBroadcast";
 import AdminReferralTree from "./pages/AdminReferralTree";
 import AdminLandingHero from "./pages/AdminLandingHero";
 import AdminReviews from "./pages/AdminReviews";
+import AdminMarketingTools from "./pages/AdminMarketingTools";
+import AdminTrainings from "./pages/AdminTrainings";
+import AdminContactPage from "./pages/AdminContactPage";
 import AdminPlanSales from "./pages/AdminPlanSales";
 import AdminIncome from "./pages/AdminIncome";
 import AppLayout from "./layout/AppLayout";
@@ -64,10 +67,13 @@ export default function App() {
               <Route path="/admin/banners" element={<AdminBanners />} />
               <Route path="/admin/team-members" element={<AdminTeamMembers />} />
               <Route path="/admin/coupons" element={<AdminCoupons />} />
+              <Route path="/admin/marketing-tools" element={<AdminMarketingTools />} />
+              <Route path="/admin/trainings" element={<AdminTrainings />} />
               <Route path="/admin/settings" element={<AdminSettings />} />
               <Route path="/admin/broadcast" element={<AdminBroadcast />} />
               <Route path="/admin/tree/:id" element={<AdminReferralTree />} />
               <Route path="/admin/landing-hero" element={<AdminLandingHero />} />
+              <Route path="/admin/contact-page" element={<AdminContactPage />} />
               <Route path="/admin/reviews" element={<AdminReviews />} />
 
               <Route path="/form-elements" element={<FormElements />} />
