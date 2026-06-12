@@ -9,7 +9,7 @@ import Button from "../components/ui/button/Button";
 import Badge from "../components/ui/badge/Badge";
 import { Modal } from "../components/ui/modal";
 import Alert from "../components/ui/alert/Alert";
-import { api } from "../lib/api";
+import { api, mediaUrl } from "../lib/api";
 import { GridIcon, EyeIcon, PencilIcon, TrashBinIcon } from "../icons";
 import { DataTable } from "../components/common/DataTable";
 import CourseModulesEditor, {
@@ -17,6 +17,7 @@ import CourseModulesEditor, {
   serializeModulesForApi,
   type AdminModule,
 } from "../components/courses/CourseModulesEditor";
+import { MediaUrlField } from "../components/media/MediaUrlField";
 
 type CategoryRow = { _id: string; name: string };
 
@@ -171,7 +172,7 @@ export default function AdminCourses() {
                 {thumb ? (
                   <img
                     className="h-10 w-10 rounded-lg object-cover shadow-sm border border-gray-100 dark:border-white/10"
-                    src={thumb}
+                    src={mediaUrl(thumb) ?? thumb}
                     alt=""
                   />
                 ) : (
@@ -538,9 +539,15 @@ export default function AdminCourses() {
                   <Label>Instructor name</Label>
                   <Input value={instructorName} onChange={(e) => setInstructorName(e.target.value)} />
                 </div>
-                <div>
-                  <Label>Thumbnail URL</Label>
-                  <Input value={thumbnailUrl} onChange={(e) => setThumbnailUrl(e.target.value)} placeholder="https://…" />
+                <div className="sm:col-span-2">
+                  <MediaUrlField
+                    label="Course thumbnail"
+                    value={thumbnailUrl}
+                    onChange={setThumbnailUrl}
+                    kind="image"
+                    hint="Uploads to AWS S3 (images/). Used on course cards and catalog."
+                    placeholder="https://startsuccess-media.s3…/images/…"
+                  />
                 </div>
               </div>
             </ComponentCard>

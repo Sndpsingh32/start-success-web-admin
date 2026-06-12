@@ -38,10 +38,11 @@ import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
 import RequireAuth from "./components/auth/RequireAuth";
+import { AuthSessionProvider } from "./providers/auth-session-provider";
 
 export default function App() {
   return (
-    <>
+    <AuthSessionProvider>
       <Router>
         <ScrollToTop />
         <Routes>
@@ -94,6 +95,6 @@ export default function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Router>
-    </>
+    </AuthSessionProvider>
   );
 }

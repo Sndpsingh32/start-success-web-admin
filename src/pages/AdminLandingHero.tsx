@@ -7,7 +7,8 @@ import Input from "../components/form/input/InputField";
 import TextArea from "../components/form/input/TextArea";
 import Button from "../components/ui/button/Button";
 import Alert from "../components/ui/alert/Alert";
-import { api } from "../lib/api";
+import { api, mediaUrl } from "../lib/api";
+import { uploadMediaFile } from "../lib/media-upload";
 import { TrashBinIcon } from "../icons";
 
 type Slide = {
@@ -93,14 +94,20 @@ export default function AdminLandingHero() {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
+  const [uploadingSlide, setUploadingSlide] = useState<string | null>(null);
+
   const handleFileUpload = async (file: File, slideIndex: number, field: "imageUrl" | "videoUrl") => {
+    const key = `${slideIndex}-${field}`;
+    setUploadingSlide(key);
     try {
-      const res = await api.admin.uploadMedia(file);
+      const url = await uploadMediaFile(file, field === "videoUrl" ? "video" : "image");
       const newSlides = [...form.slides];
-      newSlides[slideIndex][field] = res.url;
+      newSlides[slideIndex][field] = url;
       updateField("slides", newSlides);
     } catch (err) {
       alert(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploadingSlide(null);
     }
   };
 
@@ -253,7 +260,13 @@ export default function AdminLandingHero() {
                         <Label>Slide Image</Label>
                         <div className="flex gap-2">
                           <label className="flex h-11 w-full cursor-pointer items-center justify-center rounded-lg border border-dashed border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 hover:border-brand-500 hover:text-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
-                            <span>{slide.imageUrl ? "Change Image" : "Upload Image"}</span>
+                            <span>
+                              {uploadingSlide === `${index}-imageUrl`
+                                ? "Uploading…"
+                                : slide.imageUrl
+                                  ? "Change Image"
+                                  : "Upload Image"}
+                            </span>
                             <input
                               type="file"
                               className="sr-only"
@@ -264,7 +277,7 @@ export default function AdminLandingHero() {
                         </div>
                         {slide.imageUrl && (
                           <div className="mt-3 aspect-video w-full rounded-xl bg-gray-100 dark:bg-gray-800 overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm group relative">
-                            <img src={slide.imageUrl} alt={`Slide ${index + 1}`} className="h-full w-full object-cover" />
+                            <img src={mediaUrl(slide.imageUrl) ?? slide.imageUrl} alt={`Slide ${index + 1}`} className="h-full w-full object-cover" />
                             <button
                                onClick={() => {
                                  const newSlides = [...form.slides];
@@ -283,7 +296,13 @@ export default function AdminLandingHero() {
                         <Label>Slide Video (Optional)</Label>
                         <div className="flex gap-2">
                           <label className="flex h-11 w-full cursor-pointer items-center justify-center rounded-lg border border-dashed border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 hover:border-brand-500 hover:text-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
-                            <span>{slide.videoUrl ? "Change Video" : "Upload Video"}</span>
+                            <span>
+                              {uploadingSlide === `${index}-videoUrl`
+                                ? "Uploading…"
+                                : slide.videoUrl
+                                  ? "Change Video"
+                                  : "Upload Video"}
+                            </span>
                             <input
                               type="file"
                               className="sr-only"
@@ -294,7 +313,7 @@ export default function AdminLandingHero() {
                         </div>
                         {slide.videoUrl && (
                           <div className="mt-3 aspect-video w-full rounded-xl bg-gray-100 dark:bg-gray-800 overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm flex items-center justify-center group relative">
-                            <video src={slide.videoUrl} controls className="max-h-full max-w-full" />
+                            <video src={mediaUrl(slide.videoUrl) ?? slide.videoUrl} controls className="max-h-full max-w-full" />
                             <button
                                onClick={() => {
                                  const newSlides = [...form.slides];

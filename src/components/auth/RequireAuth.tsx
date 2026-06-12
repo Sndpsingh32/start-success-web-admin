@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router";
 import { api } from "../../lib/api";
+import { clearAdminSession, ensureAdminSession } from "../../lib/auth-session";
 
 type Me = { role?: string; email?: string; name?: string };
 
@@ -12,15 +13,16 @@ export default function RequireAuth() {
   const [state, setState] = useState<"loading" | "ok" | "no">("loading");
 
   useEffect(() => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-    if (!token) {
-      setState("no");
-      return;
-    }
     let cancelled = false;
-    void api.auth
-      .me()
-      .then((u) => {
+
+    const verify = async () => {
+      const ok = await ensureAdminSession();
+      if (!ok) {
+        if (!cancelled) setState("no");
+        return;
+      }
+      try {
+        const u = await api.auth.me();
         if (cancelled) return;
         const role = (u as Me).role;
         if (role === "admin") {
@@ -31,17 +33,17 @@ export default function RequireAuth() {
           }
           setState("ok");
         } else {
-          localStorage.removeItem("token");
-          localStorage.removeItem("adminUser");
+          clearAdminSession();
           setState("no");
         }
-      })
-      .catch(() => {
+      } catch {
         if (cancelled) return;
-        localStorage.removeItem("token");
-        localStorage.removeItem("adminUser");
+        clearAdminSession();
         setState("no");
-      });
+      }
+    };
+
+    void verify();
     return () => {
       cancelled = true;
     };

@@ -9,6 +9,7 @@ import Alert from "../components/ui/alert/Alert";
 import Label from "../components/form/Label";
 import Input from "../components/form/input/InputField";
 import { api, mediaUrl } from "../lib/api";
+import { MediaUrlField } from "../components/media/MediaUrlField";
 import { PencilIcon, TrashBinIcon } from "../icons";
 
 type TeamMemberRow = {
@@ -16,6 +17,7 @@ type TeamMemberRow = {
   name: string;
   experience: string;
   position: string;
+  shortDescription?: string;
   contactNumber?: string;
   state: string;
   instagram?: string;
@@ -30,6 +32,7 @@ function emptyMember(order: number): TeamMemberRow {
     name: "",
     experience: "",
     position: "",
+    shortDescription: "",
     contactNumber: "",
     state: "",
     instagram: "",
@@ -44,8 +47,6 @@ export default function AdminTeamMembers() {
   const [items, setItems] = useState<TeamMemberRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
-
   const [view, setView] = useState<"list" | "form">("list");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<TeamMemberRow>(emptyMember(0));
@@ -86,6 +87,7 @@ export default function AdminTeamMembers() {
         name: draft.name.trim(),
         experience: draft.experience.trim(),
         position: draft.position.trim(),
+        shortDescription: draft.shortDescription?.trim() || undefined,
         state: draft.state.trim(),
         contactNumber: draft.contactNumber?.trim() || undefined,
         instagram: draft.instagram?.trim().replace(/^@/, "") || undefined,
@@ -110,19 +112,6 @@ export default function AdminTeamMembers() {
       void load();
     } catch (e) {
       alert(e instanceof Error ? e.message : "Delete failed");
-    }
-  };
-
-  const handleImageUpload = async (file: File) => {
-    setUploading(true);
-    try {
-      const res = (await api.admin.uploadMedia(file)) as { url?: string; path?: string };
-      const stored = res?.path || res?.url;
-      if (stored) setDraft((d) => ({ ...d, imageUrl: stored }));
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "Upload failed");
-    } finally {
-      setUploading(false);
     }
   };
 
@@ -152,6 +141,14 @@ export default function AdminTeamMembers() {
         header: "Experience",
         accessor: (m: TeamMemberRow) => (
           <span className="text-sm text-gray-600 dark:text-gray-400">{m.experience}</span>
+        ),
+      },
+      {
+        header: "Description",
+        accessor: (m: TeamMemberRow) => (
+          <span className="line-clamp-2 max-w-[220px] text-sm text-gray-600 dark:text-gray-400">
+            {m.shortDescription?.trim() || "—"}
+          </span>
         ),
       },
       {
@@ -253,6 +250,20 @@ export default function AdminTeamMembers() {
                       />
                     </div>
                   </div>
+                  <div>
+                    <Label>Short description</Label>
+                    <textarea
+                      value={draft.shortDescription ?? ""}
+                      onChange={(e) => setDraft({ ...draft, shortDescription: e.target.value })}
+                      rows={3}
+                      maxLength={160}
+                      placeholder="Brief intro shown on the About Us leader card (max 160 characters)"
+                      className="w-full rounded-lg border border-gray-200 bg-transparent px-4 py-2.5 text-sm dark:border-gray-700 dark:text-white"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      {(draft.shortDescription ?? "").length}/160 characters
+                    </p>
+                  </div>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
                       <Label>State / City</Label>
@@ -292,42 +303,14 @@ export default function AdminTeamMembers() {
 
               <ComponentCard title="Photo & display">
                 <div className="space-y-4">
-                  <div>
-                    <Label>Photo</Label>
-                    <div className="mt-2 flex items-center gap-4">
-                      <div className="size-20 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 grid place-items-center">
-                        {draft.imageUrl ? (
-                          <img
-                            src={mediaUrl(draft.imageUrl) ?? draft.imageUrl}
-                            alt=""
-                            className="size-full object-cover"
-                          />
-                        ) : (
-                          <span className="text-xs text-gray-400">No photo</span>
-                        )}
-                      </div>
-                      <label className="cursor-pointer">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => {
-                            const f = e.target.files?.[0];
-                            if (f) void handleImageUpload(f);
-                          }}
-                        />
-                        <span className="inline-flex rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-600">
-                          {uploading ? "Uploading…" : "Upload image"}
-                        </span>
-                      </label>
-                    </div>
-                    <Input
-                      className="mt-3"
-                      value={draft.imageUrl}
-                      onChange={(e) => setDraft({ ...draft, imageUrl: e.target.value })}
-                      placeholder="Or paste image URL"
-                    />
-                  </div>
+                  <MediaUrlField
+                    label="Leader photo"
+                    value={draft.imageUrl}
+                    onChange={(imageUrl) => setDraft({ ...draft, imageUrl })}
+                    kind="image"
+                    hint="Team leader photo for About Us page. Uploads to AWS S3 images/."
+                    required
+                  />
                   <div>
                     <Label>Display order</Label>
                     <Input

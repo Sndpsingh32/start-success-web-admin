@@ -2,7 +2,8 @@ import { useState } from "react";
 import Button from "../ui/button/Button";
 import Label from "../form/Label";
 import Input from "../form/input/InputField";
-import { api } from "../../lib/api";
+import { mediaUrl } from "../../lib/api";
+import { isVideoUrl, uploadVideo } from "../../lib/media-upload";
 
 /** Matches `startsuccess-backend` course.modules shape */
 export type AdminLesson = {
@@ -91,9 +92,7 @@ export default function CourseModulesEditor({ modules, onChange }: Props) {
     setUploadKey(key);
     setUploadErr(null);
     try {
-      const res = await api.admin.uploadCourseVideo(file);
-      const url = typeof res?.url === "string" ? res.url : "";
-      if (!url) throw new Error("Upload response missing url");
+      const url = await uploadVideo(file);
       update(
         modules.map((m, i) => {
           if (i !== mi) return m;
@@ -114,9 +113,9 @@ export default function CourseModulesEditor({ modules, onChange }: Props) {
         <div>
           <Label>Course content (modules & lessons)</Label>
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            Paste a hosted video URL, or use <strong>Upload from PC</strong> to send the file to the API server
-            (saved under <code className="text-[10px]">uploads/videos</code>). Mark “Free preview” for lessons guests
-            can watch before buying.
+            Paste a video URL or use <strong>Upload from PC</strong> to send the file to{" "}
+            <strong>AWS S3</strong> (<code className="text-[10px]">videos/</code>). Mark “Free preview” for lessons
+            guests can watch before buying.
           </p>
         </div>
         <Button
@@ -217,8 +216,31 @@ export default function CourseModulesEditor({ modules, onChange }: Props) {
                           }),
                         );
                       }}
-                      placeholder="https://… or upload below"
+                      placeholder="S3 video URL or upload below"
                     />
+                    {(() => {
+                      const resolved = les.videoUrl.trim() ? mediaUrl(les.videoUrl) : null;
+                      if (!resolved) return null;
+                      if (isVideoUrl(resolved)) {
+                        return (
+                          <video
+                            key={`${mi}-${li}-${resolved}`}
+                            src={resolved}
+                            controls
+                            preload="metadata"
+                            className="mt-2 max-h-36 w-full rounded-md border border-gray-200 bg-black object-contain dark:border-gray-700"
+                          />
+                        );
+                      }
+                      return (
+                        <div className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-2 dark:border-amber-900/40 dark:bg-amber-950/30">
+                          <p className="text-xs text-amber-900 dark:text-amber-200">
+                            This URL is not a lesson video (looks like an image or wrong path). Use{" "}
+                            <strong>Upload from PC</strong> to attach an MP4 — course thumbnail is separate above.
+                          </p>
+                        </div>
+                      );
+                    })()}
                     <div className="mt-1.5">
                       <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
                         <input

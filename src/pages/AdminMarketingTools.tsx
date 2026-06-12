@@ -9,6 +9,7 @@ import Alert from "../components/ui/alert/Alert";
 import Label from "../components/form/Label";
 import Input from "../components/form/input/InputField";
 import { api, mediaUrl } from "../lib/api";
+import { isVideoFile, isVideoUrl, uploadMediaFile } from "../lib/media-upload";
 import { PencilIcon, TrashBinIcon } from "../icons";
 
 type MarketingToolRow = {
@@ -35,15 +36,6 @@ const EMPTY: MarketingToolRow = {
   order: 0,
   active: true,
 };
-
-function isVideoFile(file: File) {
-  return file.type.startsWith("video/") || /\.(mp4|webm|mov|m4v|mkv)$/i.test(file.name);
-}
-
-function isVideoUrl(url: string) {
-  const u = url.trim().toLowerCase();
-  return u.includes("/uploads/videos/") || /\.(mp4|webm|mov|m4v|mkv)(\?|$)/.test(u);
-}
 
 function UploadField({
   label,
@@ -210,16 +202,8 @@ export default function AdminMarketingTools() {
   ) => {
     setUploadingField(field);
     try {
-      const res =
-        kind === "video" || isVideoFile(file)
-          ? ((await api.admin.uploadCourseVideo(file)) as { url?: string; path?: string })
-          : ((await api.admin.uploadMedia(file)) as { url?: string; path?: string });
-      const stored = res.path || res.url || "";
-      if (stored) {
-        setDraft((d) => ({ ...d, [field]: stored }));
-      } else {
-        alert("Upload succeeded but no URL was returned.");
-      }
+      const stored = await uploadMediaFile(file, kind === "video" || isVideoFile(file) ? "video" : "image");
+      setDraft((d) => ({ ...d, [field]: stored }));
     } catch (e) {
       alert(e instanceof Error ? e.message : "Upload failed");
     } finally {

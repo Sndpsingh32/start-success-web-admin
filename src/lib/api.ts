@@ -1,18 +1,37 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from "axios";
+import {
+  clearAdminSession,
+  ensureAdminSession,
+  getAccessToken,
+  refreshAccessToken,
+  shouldRefreshAccessToken,
+  type AuthLoginResponse,
+} from "./auth-session";
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:3000";
+const MEDIA_BASE = (import.meta.env.VITE_MEDIA_BASE ?? API_BASE).replace(/\/$/, "");
+const S3_MEDIA_HOST = import.meta.env.VITE_S3_MEDIA_BASE?.replace(/\/$/, "") ?? null;
 
-/** Turn `/uploads/...` paths from API into full URLs (admin runs on a different port). */
+/** Resolve `/uploads/...`, S3 keys, or absolute URLs for admin previews. */
 export function mediaUrl(path: string | null | undefined): string | null {
-  if (!path) return null;
-  const base = API_BASE.replace(/\/$/, "");
-  if (path.startsWith("http")) {
-    if (base.includes("localhost") && path.includes("/uploads/")) {
-      return `${base}${path.slice(path.indexOf("/uploads/"))}`;
+  if (!path?.trim()) return null;
+  const trimmed = path.trim();
+  if (trimmed.startsWith("//")) return `https:${trimmed}`;
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    const apiBase = API_BASE.replace(/\/$/, "");
+    if (apiBase.includes("localhost") && trimmed.includes("/uploads/")) {
+      return `${apiBase}${trimmed.slice(trimmed.indexOf("/uploads/"))}`;
     }
-    return path;
+    return trimmed;
   }
-  return `${base}${path.startsWith("/") ? path : `/${path}`}`;
+  const uploadsIdx = trimmed.indexOf("/uploads/");
+  if (uploadsIdx !== -1) {
+    return `${MEDIA_BASE}${trimmed.slice(uploadsIdx)}`;
+  }
+  if (S3_MEDIA_HOST && /^(videos|images|media|avatars|kyc)\//.test(trimmed)) {
+    return `${S3_MEDIA_HOST}/${trimmed}`;
+  }
+  return `${MEDIA_BASE}${trimmed.startsWith("/") ? trimmed : `/${trimmed}`}`;
 }
 
 /**
@@ -33,40 +52,73 @@ const instance = axios.create({
   },
 }) as CustomAxiosInstance;
 
-// Add a request interceptor to add the auth token
+function isAuthRoute(url?: string): boolean {
+  if (!url) return false;
+  return url.includes("/auth/login") || url.includes("/auth/refresh");
+}
+
+// Proactively refresh before expiry; attach latest Bearer token to every request
 instance.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  async (config: InternalAxiosRequestConfig) => {
+    if (!isAuthRoute(config.url) && shouldRefreshAccessToken()) {
+      await refreshAccessToken();
+    }
+    const token = getAccessToken();
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    // FormData must use multipart boundary — default application/json breaks file uploads
     if (config.data instanceof FormData && config.headers) {
       delete config.headers["Content-Type"];
       delete config.headers["content-type"];
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error),
 );
 
-// Add a response interceptor to handle errors and return data directly
 instance.interceptors.response.use(
   (response: AxiosResponse) => response.data,
-  (error) => {
+  async (error) => {
+    const original = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const status = error.response?.status;
+
+    if (
+      status === 401 &&
+      original &&
+      !original._retry &&
+      !isAuthRoute(original.url)
+    ) {
+      original._retry = true;
+      const newToken = await refreshAccessToken();
+      if (newToken) {
+        if (original.headers) {
+          original.headers.Authorization = `Bearer ${newToken}`;
+        }
+        return instance.request(original);
+      }
+      clearAdminSession();
+      if (typeof window !== "undefined" && !window.location.pathname.startsWith("/signin")) {
+        window.location.href = "/signin";
+      }
+    }
+
     const message = error.response?.data?.message || error.message || "Request failed";
     const errorMessage = Array.isArray(message) ? message.join(" ") : message;
+    if (status === 401) {
+      return Promise.reject(
+        new Error(
+          typeof errorMessage === "string" && errorMessage.toLowerCase().includes("unauthorized")
+            ? "Session expired. Please sign in again as admin."
+            : errorMessage,
+        ),
+      );
+    }
     return Promise.reject(new Error(errorMessage));
-  }
+  },
 );
 
-export type AuthLoginResponse = {
-  access_token?: string;
-  refresh_token?: string;
-  user?: unknown;
-};
+export { clearAdminSession, ensureAdminSession, refreshAccessToken };
+export type { AuthLoginResponse };
 
 export type AuthMeResponse = {
   _id?: string;
@@ -83,6 +135,10 @@ export const api = {
         password,
       }),
     me: () => instance.get<AuthMeResponse>("/auth/me"),
+    refresh: (refreshToken: string) =>
+      axios.post<AuthLoginResponse>(`${API_BASE}/auth/refresh`, {
+        refresh_token: refreshToken,
+      }),
     logout: () => instance.post("/auth/logout"),
   },
   admin: {

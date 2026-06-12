@@ -9,6 +9,7 @@ import Alert from "../components/ui/alert/Alert";
 import Label from "../components/form/Label";
 import Input from "../components/form/input/InputField";
 import { api, mediaUrl } from "../lib/api";
+import { MediaUrlField } from "../components/media/MediaUrlField";
 import { PencilIcon, TrashBinIcon } from "../icons";
 
 type TrainingRow = {
@@ -36,21 +37,10 @@ const EMPTY: TrainingRow = {
   active: true,
 };
 
-function isVideoFile(file: File) {
-  return file.type.startsWith("video/") || /\.(mp4|webm|mov|m4v|mkv)$/i.test(file.name);
-}
-
-function isVideoUrl(url: string) {
-  const u = url.trim().toLowerCase();
-  return u.includes("/uploads/videos/") || /\.(mp4|webm|mov|m4v|mkv)(\?|$)/.test(u);
-}
-
 export default function AdminTrainings() {
   const [items, setItems] = useState<TrainingRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [uploadingField, setUploadingField] = useState<"thumbnailUrl" | "videoUrl" | null>(null);
-
   const [view, setView] = useState<"list" | "form">("list");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<TrainingRow>(EMPTY);
@@ -127,27 +117,6 @@ export default function AdminTrainings() {
     }
   };
 
-  const handleUpload = async (
-    file: File,
-    field: "thumbnailUrl" | "videoUrl",
-    kind: "video" | "image",
-  ) => {
-    setUploadingField(field);
-    try {
-      const res =
-        kind === "video" || isVideoFile(file)
-          ? ((await api.admin.uploadCourseVideo(file)) as { url?: string; path?: string })
-          : ((await api.admin.uploadMedia(file)) as { url?: string; path?: string });
-      const stored = res.path || res.url || "";
-      if (stored) setDraft((d) => ({ ...d, [field]: stored }));
-      else alert("Upload succeeded but no URL was returned.");
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "Upload failed");
-    } finally {
-      setUploadingField(null);
-    }
-  };
-
   const columns = useMemo(
     () => [
       {
@@ -219,8 +188,6 @@ export default function AdminTrainings() {
     ],
     [items],
   );
-
-  const videoPreview = mediaUrl(draft.videoUrl) ?? draft.videoUrl;
 
   return (
     <>
@@ -314,75 +281,23 @@ export default function AdminTrainings() {
                 </div>
               </ComponentCard>
 
-              <ComponentCard title="Media">
+              <ComponentCard title="Media (AWS S3)">
                 <div className="space-y-5">
-                  <div>
-                    <Label>Cover thumbnail</Label>
-                    <p className="mt-1 mb-2 text-xs text-gray-500">Card image on the trainings page.</p>
-                    <Input
-                      value={draft.thumbnailUrl}
-                      onChange={(e) => setDraft({ ...draft, thumbnailUrl: e.target.value })}
-                      placeholder="Image URL or upload"
-                    />
-                    <label className="mt-2 inline-block cursor-pointer">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        disabled={uploadingField === "thumbnailUrl"}
-                        onChange={(e) => {
-                          const f = e.target.files?.[0];
-                          if (f) void handleUpload(f, "thumbnailUrl", "image");
-                          e.target.value = "";
-                        }}
-                      />
-                      <span className="inline-flex rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-600">
-                        {uploadingField === "thumbnailUrl" ? "Uploading…" : "Upload thumbnail"}
-                      </span>
-                    </label>
-                    {draft.thumbnailUrl ? (
-                      <img
-                        src={mediaUrl(draft.thumbnailUrl) ?? draft.thumbnailUrl}
-                        alt=""
-                        className="mt-3 max-h-32 rounded-lg object-cover"
-                      />
-                    ) : null}
-                  </div>
-
-                  <div>
-                    <Label>Training video *</Label>
-                    <p className="mt-1 mb-2 text-xs text-gray-500">
-                      Plays when member clicks Start learning.
-                    </p>
-                    <Input
-                      value={draft.videoUrl}
-                      onChange={(e) => setDraft({ ...draft, videoUrl: e.target.value })}
-                      placeholder="/uploads/videos/... or https://..."
-                    />
-                    <label className="mt-2 inline-block cursor-pointer">
-                      <input
-                        type="file"
-                        accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov"
-                        className="hidden"
-                        disabled={uploadingField === "videoUrl"}
-                        onChange={(e) => {
-                          const f = e.target.files?.[0];
-                          if (f) void handleUpload(f, "videoUrl", "video");
-                          e.target.value = "";
-                        }}
-                      />
-                      <span className="inline-flex rounded-lg border border-brand-500/40 bg-brand-500/10 px-3 py-2 text-sm font-medium text-brand-600">
-                        {uploadingField === "videoUrl" ? "Uploading video…" : "Upload training video"}
-                      </span>
-                    </label>
-                    {videoPreview && isVideoUrl(videoPreview) ? (
-                      <video
-                        src={videoPreview}
-                        controls
-                        className="mt-3 max-h-48 w-full rounded-lg border bg-black"
-                      />
-                    ) : null}
-                  </div>
+                  <MediaUrlField
+                    label="Cover thumbnail"
+                    value={draft.thumbnailUrl}
+                    onChange={(thumbnailUrl) => setDraft({ ...draft, thumbnailUrl })}
+                    kind="image"
+                    hint="Card image on the trainings page. Stored in S3 images/."
+                  />
+                  <MediaUrlField
+                    label="Training video"
+                    value={draft.videoUrl}
+                    onChange={(videoUrl) => setDraft({ ...draft, videoUrl })}
+                    kind="video"
+                    hint="Plays when member clicks Start learning. Stored in S3 videos/."
+                    required
+                  />
 
                   <div className="flex items-center gap-3">
                     <input
@@ -400,7 +315,6 @@ export default function AdminTrainings() {
                   <Button
                     className="w-full"
                     onClick={handleSave}
-                    disabled={uploadingField !== null}
                   >
                     {editingId ? "Update training" : "Create training"}
                   </Button>

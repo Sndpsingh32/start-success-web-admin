@@ -7,7 +7,7 @@ import ComponentCard from "../components/common/ComponentCard";
 import Badge from "../components/ui/badge/Badge";
 import Button from "../components/ui/button/Button";
 import Alert from "../components/ui/alert/Alert";
-import { api } from "../lib/api";
+import { api, mediaUrl } from "../lib/api";
 import { UserCircleIcon } from "../icons";
 
 export default function AdminUsers() {
@@ -53,7 +53,7 @@ export default function AdminUsers() {
           <div className="flex items-center gap-3">
             <div className="size-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden">
               {u.avatarUrl ? (
-                <img src={u.avatarUrl} alt="" className="size-full object-cover" />
+                <img src={mediaUrl(u.avatarUrl) ?? u.avatarUrl} alt="" className="size-full object-cover" />
               ) : (
                 <UserCircleIcon className="size-6 text-gray-400" />
               )}
@@ -173,7 +173,7 @@ export default function AdminUsers() {
                   <div className="flex flex-col items-center text-center">
                     <div className="size-24 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden mb-4">
                       {selectedUser.avatarUrl ? (
-                        <img src={selectedUser.avatarUrl} alt="" className="size-full object-cover" />
+                        <img src={mediaUrl(selectedUser.avatarUrl) ?? selectedUser.avatarUrl} alt="" className="size-full object-cover" />
                       ) : (
                         <UserCircleIcon className="size-16 text-gray-400" />
                       )}

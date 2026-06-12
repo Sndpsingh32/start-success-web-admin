@@ -7,6 +7,7 @@ import Checkbox from "../form/input/Checkbox";
 import Button from "../ui/button/Button";
 import Alert from "../ui/alert/Alert";
 import { api } from "../../lib/api";
+import { clearAdminSession, setAuthTokens } from "../../lib/auth-session";
 
 export default function SignInForm() {
   const navigate = useNavigate();
@@ -26,15 +27,10 @@ export default function SignInForm() {
       if (!res.access_token) {
         throw new Error("No access token returned");
       }
-      localStorage.setItem("token", res.access_token);
-      if (res.refresh_token) {
-        localStorage.setItem("refresh_token", res.refresh_token);
-      }
+      setAuthTokens(res.access_token, res.refresh_token);
       const me = await api.auth.me();
       if (me.role !== "admin") {
-        localStorage.removeItem("token");
-        localStorage.removeItem("refresh_token");
-        localStorage.removeItem("adminUser");
+        clearAdminSession();
         throw new Error("This account is not an administrator. Use the seeded admin user.");
       }
       try {

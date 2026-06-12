@@ -3,6 +3,7 @@ import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { Dropdown } from "../ui/dropdown/Dropdown";
 import { useNavigate } from "react-router";
 import { api } from "../../lib/api";
+import { clearAdminSession } from "../../lib/auth-session";
 
 type AdminUser = { name?: string; email?: string };
 
@@ -43,9 +44,7 @@ export default function UserDropdown() {
     } catch {
       /* still clear local session */
     }
-    localStorage.removeItem("token");
-    localStorage.removeItem("refresh_token");
-    localStorage.removeItem("adminUser");
+    clearAdminSession();
     navigate("/signin", { replace: true });
   }
 

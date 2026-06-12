@@ -8,7 +8,8 @@ import Button from "../components/ui/button/Button";
 import Alert from "../components/ui/alert/Alert";
 import Label from "../components/form/Label";
 import Input from "../components/form/input/InputField";
-import { api } from "../lib/api";
+import { api, mediaUrl } from "../lib/api";
+import { MediaUrlField } from "../components/media/MediaUrlField";
 import { PencilIcon, TrashBinIcon } from "../icons";
 
 type BannerRow = {
@@ -101,7 +102,7 @@ export default function AdminBanners() {
         accessor: (b: BannerRow) => (
           <div className="flex items-center gap-3">
             <div className="size-12 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
-              <img src={b.imageUrl} alt={b.title} className="size-full object-cover" />
+              <img src={mediaUrl(b.imageUrl) ?? b.imageUrl} alt={b.title} className="size-full object-cover" />
             </div>
             <div className="flex flex-col">
               <span className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -190,14 +191,14 @@ export default function AdminBanners() {
                       placeholder="e.g. Summer Sale"
                     />
                   </div>
-                  <div>
-                    <Label>Image URL</Label>
-                    <Input
-                      value={draft.imageUrl}
-                      onChange={(e) => setDraft({ ...draft, imageUrl: e.target.value })}
-                      placeholder="https://..."
-                    />
-                  </div>
+                  <MediaUrlField
+                    label="Banner image"
+                    value={draft.imageUrl}
+                    onChange={(imageUrl) => setDraft({ ...draft, imageUrl })}
+                    kind="image"
+                    hint="Upload banner image to AWS S3 or paste an existing URL."
+                    required
+                  />
                   <div>
                     <Label>Link URL</Label>
                     <Input
