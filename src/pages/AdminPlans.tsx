@@ -20,7 +20,8 @@ function emptyTier(): PublicPricingTier {
     id: `tier-${Date.now()}`,
     name: "New plan",
     tagline: "Short pitch for cards",
-    price: 499,
+    price: 799,
+    promoPrice: 499,
     period: "one-time",
     features: ["First plan benefit"],
     highlight: false,
@@ -126,6 +127,7 @@ export default function AdminPlans() {
         highlight: !!t.highlight,
         showOnLanding: !!t.showOnLanding,
         courseIds: (t.courseIds ?? []).map((id) => String(id).trim()).filter(Boolean),
+        promoPrice: t.promoPrice != null && t.promoPrice >= 0 ? t.promoPrice : undefined,
       }));
       await api.admin.landingPricingPatch({ tiers: cleanTiers, compareRows: rows });
       setSuccess("Changes saved successfully.");
@@ -218,10 +220,19 @@ export default function AdminPlans() {
       {
         header: "Pricing",
         accessor: (t: PublicPricingTier) => (
-          <span className="text-sm font-bold text-gray-900 dark:text-white">
-            ₹{t.price}
-            <span className="text-xs text-gray-500 font-normal ml-1">/{t.period}</span>
-          </span>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-xs text-red-500 line-through">₹{t.price.toLocaleString("en-IN")}</span>
+            {t.promoPrice != null && t.promoPrice < t.price ? (
+              <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                Promo ₹{t.promoPrice.toLocaleString("en-IN")}
+              </span>
+            ) : (
+              <span className="text-sm font-bold text-gray-900 dark:text-white">
+                ₹{t.price.toLocaleString("en-IN")}
+              </span>
+            )}
+            <span className="text-xs text-gray-500 font-normal">/{t.period}</span>
+          </div>
         ),
       },
       {
@@ -497,23 +508,50 @@ export default function AdminPlans() {
                     </div>
                     <div className="grid gap-4 sm:grid-cols-2 mt-4">
                       <div>
-                        <Label>Price (₹)</Label>
+                        <Label>Original price (₹)</Label>
                         <Input
                           type="number"
+                          min="0"
                           value={String(draft.price)}
                           onChange={(e) =>
                             setDraft({ ...draft, price: Number(e.target.value) || 0 })
                           }
                         />
+                        <p className="mt-1 text-xs text-gray-500">
+                          Shown crossed out on Sell Plan / Buy Plan (MRP).
+                        </p>
                       </div>
                       <div>
-                        <Label>Period</Label>
+                        <Label>Promo code price (₹)</Label>
                         <Input
-                          value={draft.period}
-                          onChange={(e) => setDraft({ ...draft, period: e.target.value })}
+                          type="number"
+                          min="0"
+                          value={draft.promoPrice != null ? String(draft.promoPrice) : ""}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            setDraft({
+                              ...draft,
+                              promoPrice: raw === "" ? undefined : Number(raw) || 0,
+                            });
+                          }}
                         />
+                        <p className="mt-1 text-xs text-gray-500">
+                          Amount charged when buyer uses a member promo code.
+                        </p>
                       </div>
                     </div>
+                    <div className="mt-4">
+                      <Label>Period</Label>
+                      <Input
+                        value={draft.period}
+                        onChange={(e) => setDraft({ ...draft, period: e.target.value })}
+                      />
+                    </div>
+                    {draft.promoPrice != null && draft.promoPrice >= draft.price ? (
+                      <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+                        Promo price should be lower than original price to show a discount.
+                      </p>
+                    ) : null}
                   </ComponentCard>
 
                   <ComponentCard title="Benefits & Features">

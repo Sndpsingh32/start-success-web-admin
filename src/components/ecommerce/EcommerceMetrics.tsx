@@ -11,6 +11,7 @@ export default function EcommerceMetrics() {
     platformRevenue: 0,
     pendingKyc: 0,
     pendingWithdrawals: 0,
+    pendingPlanApprovals: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -103,10 +104,30 @@ export default function EcommerceMetrics() {
       iconBg: "bg-error-50 dark:bg-error-500/10",
       link: "/admin/withdrawals",
     },
+    {
+      label: "Plan approvals",
+      value: loading ? "..." : stats.pendingPlanApprovals.toLocaleString(),
+      badge: {
+        text: stats.pendingPlanApprovals > 0 ? "Action needed" : "All clear",
+        color: (stats.pendingPlanApprovals > 0 ? "warning" : "success") as "warning" | "success",
+      },
+      icon: (
+        <svg className="size-6 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+      ),
+      iconBg: "bg-brand-50 dark:bg-brand-500/10",
+      link: "/admin/plan-sales",
+    },
   ];
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 md:gap-6">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 md:gap-6">
       {cards.map((card) => {
         const inner = (
           <div

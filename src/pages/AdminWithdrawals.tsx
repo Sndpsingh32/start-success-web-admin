@@ -7,12 +7,30 @@ import Badge from "../components/ui/badge/Badge";
 import Button from "../components/ui/button/Button";
 import Alert from "../components/ui/alert/Alert";
 import Label from "../components/form/Label";
+import Input from "../components/form/input/InputField";
 import TextArea from "../components/form/input/TextArea";
 import { api } from "../lib/api";
 import { subscribeAdminRealtime } from "../lib/realtime";
 
+const PAYMENT_METHODS = [
+  { value: "cash", label: "Cash" },
+  { value: "upi", label: "UPI" },
+  { value: "bank_transfer", label: "Bank transfer" },
+  { value: "card", label: "Card" },
+  { value: "other", label: "Other" },
+] as const;
+
 function normStatus(status?: string) {
   return (status ?? "").toLowerCase();
+}
+
+function manualMethodLabel(method?: string) {
+  return PAYMENT_METHODS.find((m) => m.value === method)?.label ?? method ?? "Manual";
+}
+
+function formatInr(n?: number) {
+  if (n == null || Number.isNaN(n)) return "0";
+  return Math.round(n).toLocaleString("en-IN");
 }
 
 export default function AdminWithdrawals() {
@@ -26,6 +44,8 @@ export default function AdminWithdrawals() {
   const [view, setView] = useState<"list" | "details">("list");
   const [selectedW, setSelectedW] = useState<any | null>(null);
   const [adminNote, setAdminNote] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("");
+  const [paymentReference, setPaymentReference] = useState("");
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
@@ -56,19 +76,27 @@ export default function AdminWithdrawals() {
   const viewDetails = (item: any) => {
     setSelectedW(item);
     setAdminNote(item.adminNote || "");
+    setPaymentMethod(item.manualPaymentMethod || "");
+    setPaymentReference(item.manualPaymentReference || "");
     setView("details");
     window.scrollTo(0, 0);
   };
 
-  const handleSendPayout = async () => {
-    if (!selectedW) return;
+  const handleMarkPaid = async () => {
+    if (!selectedW || !paymentMethod) return;
     setSaving(true);
     try {
-      const updated = await api.admin.withdrawalDecide(selectedW._id, true, adminNote);
+      const updated = await api.admin.withdrawalDecide(selectedW._id, {
+        approve: true,
+        payoutMode: "manual",
+        paymentMethod,
+        paymentReference: paymentReference.trim() || undefined,
+        adminNote: adminNote.trim() || undefined,
+      });
       setSelectedW(updated);
       void load();
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Payout failed");
+      alert(e instanceof Error ? e.message : "Could not mark as paid");
     } finally {
       setSaving(false);
     }
@@ -78,11 +106,32 @@ export default function AdminWithdrawals() {
     if (!selectedW) return;
     setSaving(true);
     try {
-      await api.admin.withdrawalDecide(selectedW._id, false, adminNote);
+      await api.admin.withdrawalDecide(selectedW._id, {
+        approve: false,
+        adminNote: adminNote.trim() || undefined,
+      });
       setView("list");
       void load();
     } catch (e) {
       alert(e instanceof Error ? e.message : "Action failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleRazorpayPayout = async () => {
+    if (!selectedW) return;
+    setSaving(true);
+    try {
+      const updated = await api.admin.withdrawalDecide(selectedW._id, {
+        approve: true,
+        payoutMode: "razorpayx",
+        adminNote: adminNote.trim() || undefined,
+      });
+      setSelectedW(updated);
+      void load();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "RazorpayX payout failed");
     } finally {
       setSaving(false);
     }
@@ -135,13 +184,20 @@ export default function AdminWithdrawals() {
         header: "Amount",
         accessor: (w: any) => (
           <span className="text-sm font-bold text-gray-900 dark:text-white">
-            ₹{w.amount?.toLocaleString() ?? 0}
+            ₹{formatInr(w.amount)}
           </span>
         ),
       },
       {
         header: "Status",
-        accessor: (w: any) => <Badge color={statusTone(w.status)}>{statusLabel(w.status)}</Badge>,
+        accessor: (w: any) => (
+          <div className="flex flex-col gap-1">
+            <Badge color={statusTone(w.status)}>{statusLabel(w.status)}</Badge>
+            {w.manualPaymentMethod ? (
+              <span className="text-[10px] text-gray-500">{manualMethodLabel(w.manualPaymentMethod)}</span>
+            ) : null}
+          </div>
+        ),
       },
       {
         header: "Date",
@@ -154,7 +210,7 @@ export default function AdminWithdrawals() {
         align: "right" as const,
         accessor: (w: any) => (
           <Button variant="outline" size="sm" onClick={() => viewDetails(w)}>
-            {normStatus(w.status) === "pending" ? "Send payout" : "View"}
+            {normStatus(w.status) === "pending" ? "Process" : "View"}
           </Button>
         ),
       },
@@ -168,7 +224,7 @@ export default function AdminWithdrawals() {
     <>
       <PageMeta
         title="Withdrawal Management | StartSuccess Admin"
-        description="RazorpayX bank payouts to affiliates"
+        description="Manual payouts to affiliates"
       />
       <PageBreadcrumb pageTitle="Withdrawal Management" />
 
@@ -176,8 +232,8 @@ export default function AdminWithdrawals() {
         {view === "list" ? (
           <ComponentCard title={`Withdrawal Requests (${total})`}>
             <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
-              Approve sends money via RazorpayX to the user&apos;s KYC bank account. Status updates
-              automatically when the bank transfer completes.
+              Pay members offline (Cash, UPI, bank transfer, etc.) and mark as paid here. Wallet balance
+              is deducted when you confirm. RazorpayX auto payout can be enabled in a later phase.
             </p>
             {error && <Alert variant="error" title="Error" message={error} className="mb-4" />}
 
@@ -199,48 +255,66 @@ export default function AdminWithdrawals() {
                   />
                 </svg>
               </button>
-              <h3 className="text-xl font-bold text-gray-800 dark:text-white">Bank payout</h3>
+              <h3 className="text-xl font-bold text-gray-800 dark:text-white">Process withdrawal</h3>
             </div>
 
             {selectedW && (
               <div className="grid gap-6 lg:grid-cols-2">
-                <ComponentCard title="Payout destination (user KYC bank)">
+                <ComponentCard title="Member payout details (KYC bank)">
                   <div className="space-y-4">
                     <div className="space-y-3">
                       <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-800">
+                        <span className="text-sm text-gray-500">Member</span>
+                        <span className="text-sm font-bold text-gray-900 dark:text-white">
+                          {selectedW.userId?.name ?? "—"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-800">
                         <span className="text-sm text-gray-500">Bank</span>
                         <span className="text-sm font-bold text-gray-900 dark:text-white">
-                          {selectedW.bankName}
+                          {selectedW.bankName || "—"}
                         </span>
                       </div>
                       <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-800">
                         <span className="text-sm text-gray-500">Account</span>
                         <span className="text-sm font-bold font-mono text-gray-900 dark:text-white">
-                          {selectedW.accountNumber}
+                          {selectedW.accountNumber || "—"}
                         </span>
                       </div>
                       <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-800">
                         <span className="text-sm text-gray-500">IFSC</span>
                         <span className="text-sm font-bold font-mono text-brand-500">
-                          {selectedW.ifscCode}
+                          {selectedW.ifscCode || "—"}
                         </span>
                       </div>
                       <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-800">
                         <span className="text-sm text-gray-500">Holder</span>
                         <span className="text-sm font-bold text-gray-900 dark:text-white">
-                          {selectedW.accountHolderName}
+                          {selectedW.accountHolderName || "—"}
                         </span>
                       </div>
                     </div>
 
                     <div className="p-4 rounded-xl bg-brand-50 dark:bg-brand-500/10 border border-brand-100 dark:border-brand-500/20">
                       <p className="text-xs text-brand-600 dark:text-brand-400 font-medium uppercase mb-1">
-                        Transfer amount
+                        Amount to pay
                       </p>
                       <h3 className="text-2xl font-bold text-brand-700 dark:text-brand-300">
-                        ₹{selectedW.amount?.toLocaleString() ?? 0}
+                        ₹{formatInr(selectedW.amount)}
                       </h3>
                     </div>
+
+                    {selectedW.manualPaymentMethod && (
+                      <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm dark:border-emerald-500/30 dark:bg-emerald-500/10">
+                        Paid via <strong>{manualMethodLabel(selectedW.manualPaymentMethod)}</strong>
+                        {selectedW.manualPaymentReference ? (
+                          <>
+                            {" "}
+                            · Ref: <span className="font-mono">{selectedW.manualPaymentReference}</span>
+                          </>
+                        ) : null}
+                      </div>
+                    )}
 
                     {selectedW.razorpayPayoutId && (
                       <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-xs space-y-1">
@@ -254,27 +328,54 @@ export default function AdminWithdrawals() {
                             {selectedW.payoutProviderStatus}
                           </p>
                         )}
-                        {selectedW.payoutError && (
-                          <p className="text-red-600">{selectedW.payoutError}</p>
-                        )}
+                        {selectedW.payoutError && <p className="text-red-600">{selectedW.payoutError}</p>}
                       </div>
                     )}
                   </div>
                 </ComponentCard>
 
                 <div className="space-y-6">
-                  <ComponentCard title="RazorpayX payout">
+                  <ComponentCard title="Manual payment (offline)">
                     <div className="space-y-4">
                       <Alert
                         variant="info"
-                        title="Automatic bank transfer"
-                        message="Send payout triggers RazorpayX IMPS/NEFT to the account above. User wallet and status update when Razorpay confirms success (webhook or sync)."
+                        title="Pay member yourself"
+                        message="Transfer Cash / UPI / bank to the member, then select the method and confirm. Their wallet pending balance will be cleared."
                       />
 
                       <div>
-                        <Label>Admin note / UTR (optional)</Label>
+                        <Label>Payment method *</Label>
+                        <select
+                          value={paymentMethod}
+                          onChange={(e) => setPaymentMethod(e.target.value)}
+                          disabled={st !== "pending"}
+                          className="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white disabled:opacity-60"
+                        >
+                          <option value="" disabled>
+                            Select how you paid
+                          </option>
+                          {PAYMENT_METHODS.map((m) => (
+                            <option key={m.value} value={m.value}>
+                              {m.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <Label>Payment reference (optional)</Label>
+                        <Input
+                          value={paymentReference}
+                          onChange={(e) => setPaymentReference(e.target.value)}
+                          disabled={st !== "pending"}
+                          placeholder="UPI txn ID, receipt no., bank UTR…"
+                        />
+                      </div>
+
+                      <div>
+                        <Label>Admin note (optional)</Label>
                         <TextArea
-                          placeholder="Internal reference..."
+                          placeholder="Internal note for records…"
                           value={adminNote}
                           onChange={setAdminNote}
                           rows={3}
@@ -284,11 +385,13 @@ export default function AdminWithdrawals() {
                       {st === "pending" && (
                         <div className="flex flex-col gap-3 pt-2">
                           <Button
-                            disabled={saving}
+                            disabled={saving || !paymentMethod}
                             color="success"
-                            onClick={() => void handleSendPayout()}
+                            onClick={() => void handleMarkPaid()}
                           >
-                            {saving ? "Sending…" : `Send ₹${selectedW.amount} to bank (RazorpayX)`}
+                            {saving
+                              ? "Saving…"
+                              : `Mark paid · ₹${formatInr(selectedW.amount)} (${manualMethodLabel(paymentMethod) || "select method"})`}
                           </Button>
                           <Button
                             disabled={saving}
@@ -301,15 +404,6 @@ export default function AdminWithdrawals() {
                         </div>
                       )}
 
-                      {st === "processing" && (
-                        <div className="space-y-3">
-                          <Badge color="info">Sending to bank…</Badge>
-                          <Button disabled={saving} variant="outline" onClick={() => void handleSyncPayout()}>
-                            Refresh payout status
-                          </Button>
-                        </div>
-                      )}
-
                       {(st === "approved" || st === "rejected") && (
                         <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800 text-center">
                           <p className="text-sm text-gray-500 mb-1">Status</p>
@@ -318,6 +412,28 @@ export default function AdminWithdrawals() {
                       )}
                     </div>
                   </ComponentCard>
+
+                  {st === "pending" && (
+                    <ComponentCard title="RazorpayX (optional — next phase)">
+                      <p className="mb-3 text-sm text-gray-500">
+                        Auto bank transfer via RazorpayX. Requires RazorpayX setup in backend .env.
+                      </p>
+                      <Button disabled={saving} variant="outline" onClick={() => void handleRazorpayPayout()}>
+                        Send via RazorpayX instead
+                      </Button>
+                    </ComponentCard>
+                  )}
+
+                  {st === "processing" && (
+                    <ComponentCard title="RazorpayX in progress">
+                      <div className="space-y-3">
+                        <Badge color="info">Sending to bank…</Badge>
+                        <Button disabled={saving} variant="outline" onClick={() => void handleSyncPayout()}>
+                          Refresh payout status
+                        </Button>
+                      </div>
+                    </ComponentCard>
+                  )}
                 </div>
               </div>
             )}

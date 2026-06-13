@@ -50,6 +50,7 @@ const navItems: NavItem[] = [
       { name: "KYC Requests", path: "/admin/kyc", pro: false },
       { name: "Withdrawals", path: "/admin/withdrawals", pro: false },
       { name: "Plan sales", path: "/admin/plan-sales", pro: false },
+      { name: "Sell plan", path: "/admin/sell-plan", pro: false },
       { name: "Income dashboard", path: "/admin/income", pro: false },
       { name: "Reviews", path: "/admin/reviews", pro: false },
     ],

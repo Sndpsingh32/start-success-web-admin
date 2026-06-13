@@ -41,7 +41,7 @@ export function mediaUrl(path: string | null | undefined): string | null {
 interface CustomAxiosInstance extends AxiosInstance {
   get<T = any, R = T>(url: string, config?: any): Promise<R>;
   post<T = any, R = T, D = any>(url: string, data?: D, config?: any): Promise<R>;
-  patch<T = any, R = T, D = any>(url: string, data?: D, config?: any): Promise<R>;
+  put<T = any, R = T, D = any>(url: string, data?: D, config?: any): Promise<R>;
   delete<T = any, R = T>(url: string, config?: any): Promise<R>;
 }
 
@@ -148,8 +148,8 @@ export const api = {
     courseUpdate: (id: string, body: unknown) => instance.patch(`/courses/${encodeURIComponent(id)}`, body),
     courseDelete: (id: string) => instance.delete(`/courses/${encodeURIComponent(id)}`),
     categoriesList: () => instance.get<unknown[]>("/categories"),
-    categoryCreate: (body: { name: string; slug?: string; order?: number }) => instance.post("/categories", body),
-    categoryUpdate: (id: string, body: Partial<{ name: string; slug: string; order: number }>) =>
+    categoryCreate: (body: { name: string; slug?: string; order?: number; imageUrl?: string }) => instance.post("/categories", body),
+    categoryUpdate: (id: string, body: Partial<{ name: string; slug: string; order: number; imageUrl: string }>) =>
       instance.patch(`/categories/${encodeURIComponent(id)}`, body),
     categoryDelete: (id: string) => instance.delete(`/categories/${encodeURIComponent(id)}`),
     landingPricingGet: () =>
@@ -159,6 +159,10 @@ export const api = {
       }>("/admin/landing/pricing"),
     landingHeroGet: () => instance.get<any>("/public/hero"),
     landingHeroPatch: (body: unknown) => instance.patch("/admin/landing/hero", body),
+    landingFeaturedGet: () =>
+      instance.get<{ items: unknown[]; max: number }>("/admin/landing/featured-courses"),
+    landingFeaturedPut: (courseIds: string[]) =>
+      instance.put("/admin/landing/featured-courses", { courseIds }),
     contactPageGet: () => instance.get<any>("/admin/contact-page"),
     contactPagePatch: (body: unknown) => instance.patch("/admin/contact-page", body),
     landingPricingPatch: (body: unknown) => {
@@ -181,14 +185,38 @@ export const api = {
     /** Withdrawals management */
     withdrawalsList: (params: { status?: string; page?: number; limit?: number } = {}) =>
       instance.get<any>("/withdrawals/admin", { params }),
-    withdrawalDecide: (id: string, approve: boolean, adminNote?: string) =>
-      instance.patch(`/withdrawals/admin/${encodeURIComponent(id)}`, { approve, adminNote }),
+    withdrawalDecide: (
+      id: string,
+      body: {
+        approve: boolean;
+        adminNote?: string;
+        payoutMode?: "manual" | "razorpayx";
+        paymentMethod?: string;
+        paymentReference?: string;
+      },
+    ) => instance.patch(`/withdrawals/admin/${encodeURIComponent(id)}`, body),
     withdrawalSyncPayout: (id: string) =>
       instance.post(`/withdrawals/admin/${encodeURIComponent(id)}/sync-payout`),
     planSalesList: (params: { status?: string; page?: number; limit?: number } = {}) =>
       instance.get<any>("/plan-sales/admin", { params }),
     planSaleMarkPaid: (id: string, adminNote?: string) =>
       instance.patch(`/plan-sales/admin/${encodeURIComponent(id)}/paid`, { adminNote }),
+    planSaleDecide: (id: string, approve: boolean, adminNote?: string) =>
+      instance.patch(`/plan-sales/admin/${encodeURIComponent(id)}/decide`, { approve, adminNote }),
+    plansActive: () => instance.get<any[]>("/plans", { params: { active: "true" } }),
+    planSaleQuote: (body: { planId: string; promoCode: string }) =>
+      instance.post<any>("/plan-sales/admin/quote", body),
+    planSaleCreateOffline: (body: {
+      fullName: string;
+      email: string;
+      dateOfBirth: string;
+      contactNumber: string;
+      promoCode: string;
+      planId: string;
+      paymentMethod: string;
+      paymentReference?: string;
+      adminNote?: string;
+    }) => instance.post<any>("/plan-sales/admin/sell", body),
     incomeUsers: (params: { page?: number; limit?: number; search?: string } = {}) =>
       instance.get<any>("/analytics/income/users", { params }),
     leaderboard: (period: string) => instance.get<any>(`/analytics/leaderboard?period=${period}`),

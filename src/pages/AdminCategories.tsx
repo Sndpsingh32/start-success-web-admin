@@ -7,15 +7,17 @@ import Input from "../components/form/input/InputField";
 import Button from "../components/ui/button/Button";
 import { Modal } from "../components/ui/modal";
 import Alert from "../components/ui/alert/Alert";
-import { api } from "../lib/api";
+import { api, mediaUrl } from "../lib/api";
 import { PencilIcon, TrashBinIcon } from "../icons";
 import { DataTable } from "../components/common/DataTable";
+import { MediaUrlField } from "../components/media/MediaUrlField";
 
 type CategoryRow = {
   _id?: string;
   name?: string;
   slug?: string;
   order?: number;
+  imageUrl?: string;
 };
 
 function idOf(c: CategoryRow): string {
@@ -37,6 +39,7 @@ export default function AdminCategories() {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [order, setOrder] = useState("0");
+  const [imageUrl, setImageUrl] = useState("");
 
   const [deleteTarget, setDeleteTarget] = useState<CategoryRow | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -77,7 +80,6 @@ export default function AdminCategories() {
     return filtered.slice(start, start + pageSize);
   }, [filtered, page, pageSize]);
 
-  // Reset page when search changes
   useEffect(() => {
     setPage(0);
   }, [q]);
@@ -87,6 +89,7 @@ export default function AdminCategories() {
     setName("");
     setSlug("");
     setOrder(String(rows.length));
+    setImageUrl("");
     setView("form");
     setSuccess(null);
     setError(null);
@@ -97,6 +100,7 @@ export default function AdminCategories() {
     setName(String(c.name ?? ""));
     setSlug(String(c.slug ?? ""));
     setOrder(String(c.order ?? 0));
+    setImageUrl(String(c.imageUrl ?? ""));
     setView("form");
     setSuccess(null);
     setError(null);
@@ -109,21 +113,21 @@ export default function AdminCategories() {
     try {
       const nm = name.trim();
       if (!nm) throw new Error("Name is required");
+      const img = imageUrl.trim();
+      if (!img) throw new Error("Category cover image is required — upload an image before saving.");
       const ord = Number(order) || 0;
       const sl = slug.trim();
+      const payload = {
+        name: nm,
+        ...(sl ? { slug: sl.toLowerCase() } : {}),
+        order: ord,
+        imageUrl: img,
+      };
       if (editingId) {
-        await api.admin.categoryUpdate(editingId, {
-          name: nm,
-          ...(sl ? { slug: sl.toLowerCase() } : {}),
-          order: ord,
-        });
+        await api.admin.categoryUpdate(editingId, payload);
         setSuccess("Category updated.");
       } else {
-        await api.admin.categoryCreate({
-          name: nm,
-          ...(sl ? { slug: sl.toLowerCase() } : {}),
-          order: ord,
-        });
+        await api.admin.categoryCreate(payload);
         setSuccess("Category created.");
       }
       setView("list");
@@ -157,7 +161,7 @@ export default function AdminCategories() {
     () => [
       {
         header: "Order",
-        accessor: (c: any) => (
+        accessor: (c: CategoryRow) => (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-800 dark:bg-white/5 dark:text-gray-300">
             {Number(c.order ?? 0)}
           </span>
@@ -165,19 +169,36 @@ export default function AdminCategories() {
         align: "left" as const,
       },
       {
+        header: "Cover",
+        accessor: (c: CategoryRow) => {
+          const src = mediaUrl(String(c.imageUrl ?? ""));
+          return src ? (
+            <img
+              src={src}
+              alt=""
+              className="h-10 w-14 rounded-lg object-cover ring-1 ring-gray-200 dark:ring-gray-700"
+            />
+          ) : (
+            <span className="inline-flex h-10 w-14 items-center justify-center rounded-lg bg-gray-100 text-[10px] text-gray-400 dark:bg-white/5">
+              No image
+            </span>
+          );
+        },
+      },
+      {
         header: "Category Name",
-        accessor: (c: any) => String(c.name ?? ""),
+        accessor: (c: CategoryRow) => String(c.name ?? ""),
         className: "font-semibold text-gray-900 dark:text-white",
       },
       {
         header: "Slug",
-        accessor: (c: any) => String(c.slug ?? ""),
+        accessor: (c: CategoryRow) => String(c.slug ?? ""),
         className: "font-mono text-xs text-gray-500 dark:text-gray-400",
       },
       {
         header: "Actions",
         align: "right" as const,
-        accessor: (c: any) => (
+        accessor: (c: CategoryRow) => (
           <div className="flex items-center justify-end space-x-2">
             <button
               onClick={() => openEdit(c)}
@@ -197,7 +218,7 @@ export default function AdminCategories() {
         ),
       },
     ],
-    []
+    [],
   );
 
   return (
@@ -209,7 +230,7 @@ export default function AdminCategories() {
           <>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Categories appear in the course form and on the storefront filters. Slug is optional on create.
+                Upload a cover image per category — shown on member My Courses tiles and filters.
               </p>
               <Button onClick={openCreate} startIcon={<span className="text-lg">+</span>}>
                 New category
@@ -275,35 +296,26 @@ export default function AdminCategories() {
                 <Label>Sort order</Label>
                 <Input type="number" value={order} onChange={(e) => setOrder(e.target.value)} />
               </div>
+
+              <div className="mt-8">
+                <MediaUrlField
+                  label="Category cover image"
+                  value={imageUrl}
+                  onChange={setImageUrl}
+                  kind="image"
+                  required
+                  hint="Upload 800×600 (4:3) image. Full picture shows on member cards — nothing cropped. Save after upload."
+                  placeholder="Upload below or paste image URL"
+                />
+              </div>
             </ComponentCard>
 
-            {/* Sticky Action Bar */}
             <div className="sticky bottom-0 -mx-4 sm:-mx-6 lg:-mx-6 px-4 sm:px-6 lg:px-6 py-4 bg-white/80 backdrop-blur-md border-t border-gray-200 dark:bg-gray-900/80 dark:border-gray-800 flex items-center justify-end gap-3 z-10">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setView("list");
-                  window.scrollTo(0, 0);
-                }}
-                className="w-full sm:w-auto"
-              >
+              <Button variant="outline" onClick={() => setView("list")} className="w-full sm:w-auto">
                 Cancel
               </Button>
-              <Button
-                disabled={saving}
-                onClick={() => void handleSave()}
-                className="w-full sm:w-auto min-w-[140px]"
-              >
-                {saving ? (
-                  <div className="flex items-center gap-2">
-                    <div className="size-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Saving...
-                  </div>
-                ) : editingId ? (
-                  "Save Changes"
-                ) : (
-                  "Create Category"
-                )}
+              <Button disabled={saving} onClick={() => void handleSave()} className="w-full sm:w-auto min-w-[140px]">
+                {saving ? "Saving…" : editingId ? "Save Changes" : "Create Category"}
               </Button>
             </div>
           </div>

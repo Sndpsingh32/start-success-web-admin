@@ -18,6 +18,7 @@ import CourseModulesEditor, {
   type AdminModule,
 } from "../components/courses/CourseModulesEditor";
 import { MediaUrlField } from "../components/media/MediaUrlField";
+import { LandingFeaturedPicker } from "../components/courses/LandingFeaturedPicker";
 
 type CategoryRow = { _id: string; name: string };
 
@@ -27,6 +28,8 @@ type CourseRow = Record<string, unknown> & {
   slug?: string;
   price?: number;
   isPublished?: boolean;
+  featuredOnHero?: boolean;
+  heroOrder?: number;
   salesCount?: number;
   categoryId?: string | { toString(): string } | null;
 };
@@ -217,6 +220,17 @@ export default function AdminCourses() {
             <span className="text-xs text-gray-500 font-normal ml-1">students</span>
           </div>
         ),
+      },
+      {
+        header: "Landing",
+        accessor: (c: CourseRow) =>
+          c.featuredOnHero ? (
+            <Badge size="sm" color="primary">
+              Top #{(c.heroOrder ?? 0) + 1}
+            </Badge>
+          ) : (
+            <span className="text-xs text-gray-400">—</span>
+          ),
       },
       {
         header: "Status",
@@ -410,6 +424,17 @@ export default function AdminCourses() {
 
             {error ? <Alert variant="error" title="Error" message={error} /> : null}
             {success ? <Alert variant="success" title="Done" message={success} /> : null}
+
+            <LandingFeaturedPicker
+              courses={rows.map((c) => ({
+                _id: idOf(c),
+                title: String(c.title ?? ""),
+                slug: String(c.slug ?? ""),
+                isPublished: Boolean(c.isPublished),
+                thumbnailUrl: String(c.thumbnailUrl ?? ""),
+              }))}
+              onSaved={() => void load()}
+            />
 
             <ComponentCard title={`All courses (${filtered.length})`}>
               <DataTable

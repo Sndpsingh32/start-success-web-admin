@@ -33,6 +33,7 @@ import AdminMarketingTools from "./pages/AdminMarketingTools";
 import AdminTrainings from "./pages/AdminTrainings";
 import AdminContactPage from "./pages/AdminContactPage";
 import AdminPlanSales from "./pages/AdminPlanSales";
+import AdminSellPlan from "./pages/AdminSellPlan";
 import AdminIncome from "./pages/AdminIncome";
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
@@ -64,6 +65,7 @@ export default function App() {
               <Route path="/admin/kyc" element={<AdminKyc />} />
               <Route path="/admin/withdrawals" element={<AdminWithdrawals />} />
               <Route path="/admin/plan-sales" element={<AdminPlanSales />} />
+              <Route path="/admin/sell-plan" element={<AdminSellPlan />} />
               <Route path="/admin/income" element={<AdminIncome />} />
               <Route path="/admin/banners" element={<AdminBanners />} />
               <Route path="/admin/team-members" element={<AdminTeamMembers />} />
