@@ -165,6 +165,13 @@ export const api = {
       instance.put("/admin/landing/featured-courses", { courseIds }),
     contactPageGet: () => instance.get<any>("/admin/contact-page"),
     contactPagePatch: (body: unknown) => instance.patch("/admin/contact-page", body),
+    contactInquiriesList: (params: { page?: number; limit?: number } = {}) =>
+      instance.get<{ items: unknown[]; total: number; page: number; limit: number }>(
+        "/admin/contact-inquiries",
+        { params },
+      ),
+    contactInquiryDelete: (id: string) =>
+      instance.delete(`/admin/contact-inquiries/${encodeURIComponent(id)}`),
     landingPricingPatch: (body: unknown) => {
       console.log("landingPricingPatch called with", body);
       return instance.patch("/admin/landing/pricing", body);

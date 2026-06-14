@@ -26,7 +26,7 @@ function emptyLesson(order: number): AdminLesson {
   return {
     title: "",
     videoUrl: "",
-    durationSec: 600,
+    durationSec: 0,
     freePreview: false,
     order,
   };
@@ -229,6 +229,20 @@ export default function CourseModulesEditor({ modules, onChange }: Props) {
                             controls
                             preload="metadata"
                             className="mt-2 max-h-36 w-full rounded-md border border-gray-200 bg-black object-contain dark:border-gray-700"
+                            onLoadedMetadata={(e) => {
+                              const sec = Math.floor(e.currentTarget.duration);
+                              if (!Number.isFinite(sec) || sec <= 0) return;
+                              if (les.durationSec === sec) return;
+                              update(
+                                modules.map((m, i) => {
+                                  if (i !== mi) return m;
+                                  const lessons = m.lessons.map((l, j) =>
+                                    j === li ? { ...l, durationSec: sec } : l,
+                                  );
+                                  return { ...m, lessons };
+                                }),
+                              );
+                            }}
                           />
                         );
                       }
@@ -259,11 +273,13 @@ export default function CourseModulesEditor({ modules, onChange }: Props) {
                     </div>
                   </div>
                   <div className="sm:col-span-2">
-                    <Label>Minutes</Label>
+                    <Label>Duration</Label>
                     <Input
                       type="number"
                       min="0"
-                      value={Math.round(les.durationSec / 60)}
+                      step="1"
+                      value={les.durationSec > 0 ? Math.round(les.durationSec / 60) : ""}
+                      placeholder="Auto"
                       onChange={(e) => {
                         const min = Math.max(0, Number(e.target.value) || 0);
                         update(
@@ -277,6 +293,16 @@ export default function CourseModulesEditor({ modules, onChange }: Props) {
                         );
                       }}
                     />
+                    {les.durationSec > 0 ? (
+                      <p className="mt-1 text-[10px] text-gray-500 dark:text-gray-400">
+                        {Math.floor(les.durationSec / 60)}:
+                        {String(Math.floor(les.durationSec % 60)).padStart(2, "0")} from video
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-[10px] text-gray-500 dark:text-gray-400">
+                        Auto-detected when video loads
+                      </p>
+                    )}
                   </div>
                   <div className="flex flex-col justify-end gap-2 sm:col-span-1">
                     <label className="flex cursor-pointer items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
