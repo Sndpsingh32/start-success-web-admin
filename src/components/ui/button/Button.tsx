@@ -8,6 +8,7 @@ interface ButtonProps {
   endIcon?: ReactNode; // Icon after the text
   onClick?: () => void; // Click handler
   disabled?: boolean; // Disabled state
+  type?: "button" | "submit" | "reset";
   className?: string; // Additional classes
   color?: "primary" | "success" | "error" | "warning" | "info"; // Button color theme
 }
@@ -19,6 +20,7 @@ const Button: React.FC<ButtonProps> = ({
   startIcon,
   endIcon,
   onClick,
+  type = "button",
   className = "",
   disabled = false,
   color = "primary",
@@ -51,6 +53,7 @@ const Button: React.FC<ButtonProps> = ({
 
   return (
     <button
+      type={type}
       className={`inline-flex items-center justify-center gap-2 rounded-lg transition ${className} ${
         sizeClasses[size]
       } ${finalVariantClasses} ${
