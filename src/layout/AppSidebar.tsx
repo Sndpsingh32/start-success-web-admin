@@ -278,7 +278,7 @@ const AppSidebar: React.FC = () => {
         lg:translate-x-0`}
     >
       <div
-        className={`py-8 flex ${
+        className={`py-4 flex ${
           !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
         }`}
       >
@@ -286,8 +286,11 @@ const AppSidebar: React.FC = () => {
           <img
             src="/images/star-success.png"
             alt="StartSuccess Logo"
-            width={isExpanded || isHovered || isMobileOpen ? 150 : 32}
-            className="object-contain"
+            className={`object-contain ${
+              isExpanded || isHovered || isMobileOpen
+                ? "h-10 w-auto max-w-[120px]"
+                : "h-8 w-8"
+            }`}
           />
         </Link>
       </div>
