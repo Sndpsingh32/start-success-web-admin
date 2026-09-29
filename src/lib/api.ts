@@ -8,8 +8,11 @@ import {
   type AuthLoginResponse,
 } from "./auth-session";
 
-const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:3000";
-const MEDIA_BASE = (import.meta.env.VITE_MEDIA_BASE ?? API_BASE).replace(/\/$/, "");
+const API_BASE =
+  import.meta.env.VITE_API_BASE ?? import.meta.env.VITE_API_URL ?? "https://api.startsuccess.in";
+const MEDIA_BASE = (
+  import.meta.env.VITE_MEDIA_BASE ?? import.meta.env.VITE_API_BASE ?? import.meta.env.VITE_API_URL ?? "https://api.startsuccess.in"
+).replace(/\/$/, "");
 const S3_MEDIA_HOST = import.meta.env.VITE_S3_MEDIA_BASE?.replace(/\/$/, "") ?? null;
 
 /** Resolve `/uploads/...`, S3 keys, or absolute URLs for admin previews. */
@@ -183,6 +186,8 @@ export const api = {
       instance.patch(`/admin/users/${encodeURIComponent(id)}/ban`, null, { params: { value: ban } }),
     userVerifySeller: (id: string, verify: boolean) =>
       instance.patch(`/admin/users/${encodeURIComponent(id)}/verify-seller`, null, { params: { value: verify } }),
+    userUpdatePassword: (id: string, password: string) =>
+      instance.patch(`/admin/users/${encodeURIComponent(id)}/password`, { password }),
     userReferrals: (id: string) => instance.get(`/admin/users/${encodeURIComponent(id)}/referrals`),
     /** KYC management */
     kycList: (params: { status?: string; page?: number; limit?: number } = {}) =>

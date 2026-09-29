@@ -50,6 +50,8 @@ export default function AdminTeamMembers() {
   const [view, setView] = useState<"list" | "form">("list");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<TeamMemberRow>(emptyMember(0));
+  const [formError, setFormError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -71,24 +73,32 @@ export default function AdminTeamMembers() {
   const handleEdit = (item: TeamMemberRow) => {
     setEditingId(item._id!);
     setDraft({ ...item });
+    setFormError(null);
     setView("form");
   };
 
   const handleCreate = () => {
     setEditingId(null);
     setDraft(emptyMember(items.length));
+    setFormError(null);
     setView("form");
   };
 
   const handleSave = async () => {
+    if (!draft.name.trim()) {
+      setFormError("Member name is required.");
+      return;
+    }
+    setSaving(true);
+    setFormError(null);
     try {
       const body = {
         ...draft,
         name: draft.name.trim(),
-        experience: draft.experience.trim(),
-        position: draft.position.trim(),
+        experience: draft.experience.trim() || "1 year",
+        position: draft.position.trim() || "Leader",
         shortDescription: draft.shortDescription?.trim() || undefined,
-        state: draft.state.trim(),
+        state: draft.state.trim() || "India",
         contactNumber: draft.contactNumber?.trim() || undefined,
         instagram: draft.instagram?.trim().replace(/^@/, "") || undefined,
         instagramSecondary: draft.instagramSecondary?.trim().replace(/^@/, "") || undefined,
@@ -101,7 +111,9 @@ export default function AdminTeamMembers() {
       setView("list");
       void load();
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Save failed");
+      setFormError(e instanceof Error ? e.message : "Save failed");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -225,6 +237,8 @@ export default function AdminTeamMembers() {
               </Button>
             </div>
 
+            {formError ? <Alert variant="error" title="Error" message={formError} /> : null}
+
             <div className="grid gap-6 lg:grid-cols-2">
               <ComponentCard title="Profile">
                 <div className="space-y-4">
@@ -331,8 +345,8 @@ export default function AdminTeamMembers() {
                       Show on About Us page
                     </Label>
                   </div>
-                  <Button className="w-full" onClick={handleSave}>
-                    {editingId ? "Update member" : "Create member"}
+                  <Button className="w-full" onClick={handleSave} disabled={saving}>
+                    {saving ? "Saving..." : editingId ? "Update member" : "Create member"}
                   </Button>
                 </div>
               </ComponentCard>
