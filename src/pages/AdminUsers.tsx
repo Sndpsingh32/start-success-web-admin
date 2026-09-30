@@ -38,6 +38,25 @@ export default function AdminUsers() {
   const [passwordUpdating, setPasswordUpdating] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
+  const [plans, setPlans] = useState<any[]>([]);
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+  const [selectedPlanId, setSelectedPlanId] = useState("");
+  const [upgradingPlan, setUpgradingPlan] = useState(false);
+  const [upgradeError, setUpgradeError] = useState<string | null>(null);
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deletingUser, setDeletingUser] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const [revealedPasswords, setRevealedPasswords] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    void api.admin
+      .plansActive()
+      .then((data) => setPlans(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, []);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -88,10 +107,10 @@ export default function AdminUsers() {
     setPasswordError(null);
     try {
       await api.admin.userUpdatePassword(selectedUser._id, trimmed);
-      const updatedUser = { ...selectedUser, password: trimmed };
+      const updatedUser = { ...selectedUser, password: trimmed, plainPassword: trimmed };
       setSelectedUser(updatedUser);
       setUsers((prev) =>
-        prev.map((u) => (u._id === selectedUser._id ? { ...u, password: trimmed } : u))
+        prev.map((u) => (u._id === selectedUser._id ? { ...u, password: trimmed, plainPassword: trimmed } : u))
       );
       setNewPassword("");
       setIsPasswordModalOpen(false);
@@ -99,6 +118,40 @@ export default function AdminUsers() {
       setPasswordError(e instanceof Error ? e.message : "Failed to update password");
     } finally {
       setPasswordUpdating(false);
+    }
+  };
+
+  const handleUpgradePlan = async () => {
+    if (!selectedUser?._id || !selectedPlanId) return;
+    setUpgradingPlan(true);
+    setUpgradeError(null);
+    try {
+      const updated = await api.admin.userUpgradePlan(selectedUser._id, selectedPlanId);
+      setSelectedUser(updated);
+      setUsers((prev) => prev.map((u) => (u._id === selectedUser._id ? updated : u)));
+      setIsUpgradeModalOpen(false);
+    } catch (e) {
+      setUpgradeError(e instanceof Error ? e.message : "Failed to upgrade plan");
+    } finally {
+      setUpgradingPlan(false);
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!selectedUser?._id) return;
+    setDeletingUser(true);
+    setDeleteError(null);
+    try {
+      await api.admin.userDelete(selectedUser._id);
+      setUsers((prev) => prev.filter((u) => u._id !== selectedUser._id));
+      setTotal((t) => Math.max(0, t - 1));
+      setIsDeleteModalOpen(false);
+      setSelectedUser(null);
+      setView("list");
+    } catch (e) {
+      setDeleteError(e instanceof Error ? e.message : "Failed to delete user");
+    } finally {
+      setDeletingUser(false);
     }
   };
 
@@ -173,6 +226,55 @@ export default function AdminUsers() {
         ),
       },
       {
+        header: "Plan",
+        accessor: (u: any) => (
+          <span className="text-xs font-semibold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-500/10 px-2 py-0.5 rounded-full border border-brand-200 dark:border-brand-500/20">
+            {u.planId?.name || (typeof u.planId === "string" ? "Plan assigned" : "No Plan")}
+          </span>
+        ),
+      },
+      {
+        header: "Password",
+        accessor: (u: any) => {
+          const pwd = u.plainPassword || (u.password && !u.password.startsWith("$2") ? u.password : "");
+          const isRevealed = Boolean(revealedPasswords[u._id]);
+          return (
+            <div className="flex items-center gap-1 font-mono text-xs">
+              <span className="font-semibold text-gray-900 dark:text-white">
+                {isRevealed ? (pwd || "Hashed") : "••••••••"}
+              </span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setRevealedPasswords((prev) => ({
+                    ...prev,
+                    [u._id]: !prev[u._id],
+                  }));
+                }}
+                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                title={isRevealed ? "Hide" : "Show password"}
+              >
+                {isRevealed ? <EyeCloseIcon className="size-3.5" /> : <EyeIcon className="size-3.5" />}
+              </button>
+              {pwd && isRevealed && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void copyPassword(pwd);
+                  }}
+                  className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                  title="Copy password"
+                >
+                  <CopyIcon className="size-3.5" />
+                </button>
+              )}
+            </div>
+          );
+        },
+      },
+      {
         header: "Joined",
         accessor: (u: any) => (
           <span className="text-xs text-gray-500">{new Date(u.createdAt).toLocaleDateString()}</span>
@@ -188,7 +290,7 @@ export default function AdminUsers() {
         ),
       },
     ],
-    []
+    [revealedPasswords]
   );
 
   return (
@@ -258,41 +360,78 @@ export default function AdminUsers() {
                         <Badge color="primary">{selectedUser.rank}</Badge>
                       </div>
                       <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-500">Plan</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-brand-600 dark:text-brand-400">
+                            {selectedUser.planId?.name ||
+                              (typeof selectedUser.planId === "string"
+                                ? "Plan assigned"
+                                : "No Plan")}
+                          </span>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedPlanId(
+                                selectedUser.planId?._id ||
+                                  (typeof selectedUser.planId === "string"
+                                    ? selectedUser.planId
+                                    : "")
+                              );
+                              setUpgradeError(null);
+                              setIsUpgradeModalOpen(true);
+                            }}
+                          >
+                            Upgrade
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
                         <span className="text-gray-500">Password</span>
                         <div className="flex items-center gap-1.5 font-mono">
-                          <span className="font-semibold text-gray-900 dark:text-white">
-                            {showPassword
-                              ? selectedUser.password?.startsWith("$2")
-                                ? "Hashed"
-                                : selectedUser.password || "N/A"
-                              : "••••••••"}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-                            title={showPassword ? "Hide password" : "Show password"}
-                          >
-                            {showPassword ? (
-                              <EyeCloseIcon className="size-4" />
-                            ) : (
-                              <EyeIcon className="size-4" />
-                            )}
-                          </button>
-                          {selectedUser.password && !selectedUser.password.startsWith("$2") && (
-                            <button
-                              type="button"
-                              onClick={() => void copyPassword(selectedUser.password)}
-                              className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-                              title="Copy password"
-                            >
-                              {copied ? (
-                                <CheckCircleIcon className="size-4 text-success-500" />
-                              ) : (
-                                <CopyIcon className="size-4" />
-                              )}
-                            </button>
-                          )}
+                          {(() => {
+                            const pwd =
+                              selectedUser.plainPassword ||
+                              (selectedUser.password &&
+                              !selectedUser.password.startsWith("$2")
+                                ? selectedUser.password
+                                : "");
+                            return (
+                              <>
+                                <span className="font-semibold text-gray-900 dark:text-white">
+                                  {showPassword
+                                    ? pwd || (selectedUser.password ? "Hashed" : "N/A")
+                                    : "••••••••"}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => setShowPassword(!showPassword)}
+                                  className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                                  title={showPassword ? "Hide password" : "Show password"}
+                                >
+                                  {showPassword ? (
+                                    <EyeCloseIcon className="size-4" />
+                                  ) : (
+                                    <EyeIcon className="size-4" />
+                                  )}
+                                </button>
+                                {pwd && (
+                                  <button
+                                    type="button"
+                                    onClick={() => void copyPassword(pwd)}
+                                    className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                                    title="Copy password"
+                                  >
+                                    {copied ? (
+                                      <CheckCircleIcon className="size-4 text-success-500" />
+                                    ) : (
+                                      <CopyIcon className="size-4" />
+                                    )}
+                                  </button>
+                                )}
+                              </>
+                            );
+                          })()}
                         </div>
                       </div>
                     </div>
@@ -408,6 +547,31 @@ export default function AdminUsers() {
                     >
                       Change Password
                     </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setSelectedPlanId(
+                          selectedUser.planId?._id ||
+                            (typeof selectedUser.planId === "string"
+                              ? selectedUser.planId
+                              : "")
+                        );
+                        setUpgradeError(null);
+                        setIsUpgradeModalOpen(true);
+                      }}
+                    >
+                      Upgrade Plan
+                    </Button>
+                    <Button
+                      variant="outline"
+                      color="error"
+                      onClick={() => {
+                        setDeleteError(null);
+                        setIsDeleteModalOpen(true);
+                      }}
+                    >
+                      Delete User
+                    </Button>
                   </div>
                 </ComponentCard>
               </div>
@@ -466,6 +630,96 @@ export default function AdminUsers() {
             onClick={() => void handleUpdatePassword()}
           >
             {passwordUpdating ? "Saving..." : "Save Password"}
+          </Button>
+        </div>
+      </Modal>
+
+      {/* Upgrade Plan Modal */}
+      <Modal
+        isOpen={isUpgradeModalOpen}
+        onClose={() => setIsUpgradeModalOpen(false)}
+        className="max-w-md w-full p-6 m-4"
+      >
+        <h3 className="mb-2 text-lg font-semibold text-gray-800 dark:text-white">
+          Upgrade User Plan
+        </h3>
+        <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
+          Select a new plan for <strong>{selectedUser?.name}</strong>.
+        </p>
+
+        {upgradeError && (
+          <Alert variant="error" title="Error" message={upgradeError} className="mb-4" />
+        )}
+
+        <div className="mb-6 space-y-2">
+          <Label>Target Plan</Label>
+          <select
+            value={selectedPlanId}
+            onChange={(e) => setSelectedPlanId(e.target.value)}
+            disabled={upgradingPlan}
+            className="h-11 w-full appearance-none rounded-lg border border-gray-300 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm text-gray-800 dark:text-white/90 focus:border-brand-500 focus:outline-hidden"
+          >
+            <option value="">-- Select a Plan --</option>
+            {plans.map((p) => (
+              <option key={p._id} value={p._id}>
+                {p.name} (Tier {p.tier ?? "-"}, ₹{p.price?.toLocaleString?.() ?? p.price})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setIsUpgradeModalOpen(false)}
+            disabled={upgradingPlan}
+          >
+            Cancel
+          </Button>
+          <Button
+            disabled={upgradingPlan || !selectedPlanId}
+            onClick={() => void handleUpgradePlan()}
+          >
+            {upgradingPlan ? "Upgrading..." : "Confirm Upgrade"}
+          </Button>
+        </div>
+      </Modal>
+
+      {/* Delete User Modal */}
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        className="max-w-md w-full p-6 m-4"
+      >
+        <h3 className="mb-2 text-lg font-semibold text-error-600 dark:text-error-400">
+          Delete User ID
+        </h3>
+        <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+          Are you sure you want to permanently delete user{" "}
+          <strong className="text-gray-900 dark:text-white">
+            {selectedUser?.name}
+          </strong>{" "}
+          ({selectedUser?.email})? This action cannot be undone.
+        </p>
+
+        {deleteError && (
+          <Alert variant="error" title="Error" message={deleteError} className="mb-4" />
+        )}
+
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setIsDeleteModalOpen(false)}
+            disabled={deletingUser}
+          >
+            Cancel
+          </Button>
+          <Button
+            color="error"
+            disabled={deletingUser}
+            onClick={() => void handleDeleteUser()}
+          >
+            {deletingUser ? "Deleting..." : "Delete User"}
           </Button>
         </div>
       </Modal>

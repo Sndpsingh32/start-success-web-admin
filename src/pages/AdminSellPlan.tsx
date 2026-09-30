@@ -59,6 +59,7 @@ export default function AdminSellPlan() {
   const [paymentMethod, setPaymentMethod] = useState("");
   const [paymentReference, setPaymentReference] = useState("");
   const [adminNote, setAdminNote] = useState("");
+  const [customPassword, setCustomPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -165,6 +166,7 @@ export default function AdminSellPlan() {
         paymentMethod,
         paymentReference: paymentReference.trim() || undefined,
         adminNote: adminNote.trim() || undefined,
+        customPassword: customPassword.trim() || undefined,
       })) as {
         message?: string;
         sale?: { _id?: string };
@@ -197,6 +199,7 @@ export default function AdminSellPlan() {
     setPaymentMethod("");
     setPaymentReference("");
     setAdminNote("");
+    setCustomPassword("");
     setSuccess(null);
     setCredentials(null);
     setSaleId(null);
@@ -326,6 +329,18 @@ export default function AdminSellPlan() {
                 <div>
                   <Label>Contact number *</Label>
                   <Input type="tel" value={contact} onChange={(e) => setContact(e.target.value)} required />
+                </div>
+                <div className="sm:col-span-2">
+                  <Label>Custom Password (Optional)</Label>
+                  <Input
+                    type="text"
+                    value={customPassword}
+                    onChange={(e) => setCustomPassword(e.target.value)}
+                    placeholder="Enter custom password (leave blank to auto-generate)"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    If left blank, a secure temporary password will be automatically generated.
+                  </p>
                 </div>
               </div>
             </ComponentCard>

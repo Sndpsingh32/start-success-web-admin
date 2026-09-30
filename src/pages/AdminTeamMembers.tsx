@@ -92,8 +92,9 @@ export default function AdminTeamMembers() {
     setSaving(true);
     setFormError(null);
     try {
+      const { _id, createdAt, updatedAt, __v, ...cleanDraft } = draft as any;
       const body = {
-        ...draft,
+        ...cleanDraft,
         name: draft.name.trim(),
         experience: draft.experience.trim() || "1 year",
         position: draft.position.trim() || "Leader",
@@ -102,6 +103,7 @@ export default function AdminTeamMembers() {
         contactNumber: draft.contactNumber?.trim() || undefined,
         instagram: draft.instagram?.trim().replace(/^@/, "") || undefined,
         instagramSecondary: draft.instagramSecondary?.trim().replace(/^@/, "") || undefined,
+        imageUrl: draft.imageUrl?.trim() || "",
       };
       if (editingId) {
         await api.admin.teamMemberUpdate(editingId, body);

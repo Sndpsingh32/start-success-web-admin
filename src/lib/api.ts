@@ -188,6 +188,10 @@ export const api = {
       instance.patch(`/admin/users/${encodeURIComponent(id)}/verify-seller`, null, { params: { value: verify } }),
     userUpdatePassword: (id: string, password: string) =>
       instance.patch(`/admin/users/${encodeURIComponent(id)}/password`, { password }),
+    userUpgradePlan: (id: string, planId: string) =>
+      instance.patch(`/admin/users/${encodeURIComponent(id)}/upgrade-plan`, { planId }),
+    userDelete: (id: string) =>
+      instance.delete(`/admin/users/${encodeURIComponent(id)}`),
     userReferrals: (id: string) => instance.get(`/admin/users/${encodeURIComponent(id)}/referrals`),
     /** KYC management */
     kycList: (params: { status?: string; page?: number; limit?: number } = {}) =>
@@ -228,6 +232,7 @@ export const api = {
       paymentMethod: string;
       paymentReference?: string;
       adminNote?: string;
+      customPassword?: string;
     }) => instance.post<any>("/plan-sales/admin/sell", body),
     incomeUsers: (params: { page?: number; limit?: number; search?: string } = {}) =>
       instance.get<any>("/analytics/income/users", { params }),
